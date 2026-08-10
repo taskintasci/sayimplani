@@ -251,8 +251,10 @@ export default function RedbullSayim({ onNavigate }) {
                 <th className="px-3 py-2.5 w-28">Adres</th>
                 <th className="px-3 py-2.5 w-28">Stok Kodu</th>
                 <th className="px-3 py-2.5">Stok Adı</th>
+                <th className="px-3 py-2.5 w-40">SSCC</th>
                 <th className="px-3 py-2.5 w-24">Lot</th>
                 <th className="px-3 py-2.5 w-28 text-center">Alisan Statu</th>
+                <th className="px-3 py-2.5 w-16 text-right">Palet Adeti</th>
                 <th className="px-3 py-2.5 w-20 text-right sistem-col">Sistem</th>
                 <th className="px-3 py-2.5 w-24 text-right text-blue-300 sayilan-col">Sayılan ▾</th>
                 <th className="px-3 py-2.5 w-16">Birim</th>
@@ -275,8 +277,10 @@ export default function RedbullSayim({ onNavigate }) {
                     <td className="px-3 py-2 mono text-slate-600 text-[11.5px]">{row.adres}</td>
                     <td className="px-3 py-2 mono font-medium text-blue-700 text-[11.5px]">{row.kod}</td>
                     <td className="px-3 py-2 font-medium text-slate-800">{row.ad}</td>
+                    <td className="px-3 py-2 mono text-slate-400 text-[10.5px]">{row.sscc}</td>
                     <td className="px-3 py-2 mono text-slate-500 text-[11px]">{row.parti}</td>
                     <td className="px-3 py-2 text-center"><RedbullDurumBadge durum={row.durum} /></td>
+                    <td className="px-3 py-2 text-right mono text-slate-500">{row.paletAdeti}</td>
                     <td className="px-3 py-2 text-right mono text-slate-500 sistem-col">{row.sayim}</td>
                     <td className="px-3 py-2 text-right sayilan-col">
                       <div className="flex items-center justify-end gap-1">

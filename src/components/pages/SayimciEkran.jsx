@@ -120,6 +120,8 @@ function SwipeCard({ row, sayilanMiktar, onConfirm, onEdit, isMembran, isAntrepo
           <span className="text-slate-500 mono" style={{ fontSize: 15 }}>{row.kod}</span>
           {row.parti && <span className="text-slate-400 mono text-xs">{isAntrepo ? 'Beyanname' : isRedbull ? 'Lot' : 'Parti'}: {row.parti}</span>}
           {isAntrepo && row.paletBarkodu && <span className="text-slate-400 mono text-xs">Palet: {row.paletBarkodu}</span>}
+          {isRedbull && row.sscc && <span className="text-slate-400 mono text-xs">SSCC: {row.sscc}</span>}
+          {isRedbull && row.durum && <span className="text-slate-400 mono text-xs">{row.durum}</span>}
         </div>
 
         {/* Sistem miktarı + sayılan */}
@@ -613,8 +615,10 @@ export default function SayimciEkran({ mode = 'self' }) {
                     <th className="px-3 py-2.5 w-24">Adres</th>
                     <th className="px-3 py-2.5 w-28">Kod</th>
                     <th className="px-3 py-2.5">Ad</th>
+                    {isRedbull && <th className="px-3 py-2.5 w-36">SSCC</th>}
                     <th className="px-3 py-2.5 w-32">{isAntrepo ? 'Beyanname Numarası' : isRedbull ? 'Lot' : 'Parti'}</th>
                     {isAntrepo && <th className="px-3 py-2.5 w-28">Palet Barkodu</th>}
+                    {isRedbull && <th className="px-3 py-2.5 w-24 text-center">Alisan Statu</th>}
                     <th className="px-3 py-2.5 w-20 text-right sistem-col">Sistem</th>
                     <th className="px-3 py-2.5 w-24 text-right text-blue-600 sayilan-col">Sayılan ▾</th>
                     <th className="px-3 py-2.5 w-20">Birim</th>
@@ -694,8 +698,10 @@ export default function SayimciEkran({ mode = 'self' }) {
                         <td className="px-3 py-2 mono text-slate-600 text-[11.5px]">{row.adres}</td>
                         <td className="px-3 py-2 mono font-medium text-blue-700 text-[11.5px]">{row.kod}</td>
                         <td className="px-3 py-2 font-medium text-slate-800">{row.ad}</td>
+                        {isRedbull && <td className="px-3 py-2 mono text-slate-400 text-[10.5px]">{row.sscc}</td>}
                         <td className="px-3 py-2 mono text-slate-500 text-[11.5px]">{row.parti}</td>
                         {isAntrepo && <td className="px-3 py-2 mono text-slate-500 text-[11.5px]">{row.paletBarkodu}</td>}
+                        {isRedbull && <td className="px-3 py-2 text-center text-slate-500 text-[11.5px]">{row.durum}</td>}
                         <td className="px-3 py-2 text-right mono text-slate-500 sistem-col">{row.sayim}</td>
                         <td className="px-3 py-2 text-right sayilan-col">
                           <div className="flex items-center justify-end gap-1">

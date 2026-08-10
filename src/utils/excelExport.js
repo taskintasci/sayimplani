@@ -540,16 +540,19 @@ export async function exportRedbullRaporFarklar(discrepancies, session, manualRo
   const ws = workbook.addWorksheet('Mutabakat Raporu')
 
   ws.columns = [
-    { header: 'Sıra No.',     key: 'siraNo',  width: 8  },
-    { header: 'Stok Kodu',    key: 'kod',     width: 16 },
-    { header: 'Stok Adı',     key: 'ad',      width: 35 },
-    { header: 'Adres',        key: 'adres',   width: 16 },
-    { header: 'Lot',          key: 'parti',   width: 16 },
-    { header: 'Sistem',       key: 'sayim',   width: 14 },
-    { header: 'Sayılan',      key: 'sayilan', width: 14 },
-    { header: 'Fark',         key: 'fark',    width: 12 },
-    { header: 'Birim',        key: 'birim',   width: 8  },
-    { header: 'Not',          key: 'not',     width: 25 },
+    { header: 'Sıra No.',     key: 'siraNo',     width: 8  },
+    { header: 'Stok Kodu',    key: 'kod',        width: 16 },
+    { header: 'Stok Adı',     key: 'ad',         width: 35 },
+    { header: 'SSCC',         key: 'sscc',       width: 22 },
+    { header: 'Lot',          key: 'parti',      width: 16 },
+    { header: 'Alisan Statu', key: 'durum',      width: 18 },
+    { header: 'Palet Adeti',  key: 'paletAdeti', width: 12 },
+    { header: 'Adres',        key: 'adres',      width: 16 },
+    { header: 'Sistem',       key: 'sayim',      width: 14 },
+    { header: 'Sayılan',      key: 'sayilan',    width: 14 },
+    { header: 'Fark',         key: 'fark',       width: 12 },
+    { header: 'Birim',        key: 'birim',      width: 8  },
+    { header: 'Not',          key: 'not',        width: 25 },
   ]
 
   ws.getRow(1).eachCell(cell => {
@@ -565,8 +568,9 @@ export async function exportRedbullRaporFarklar(discrepancies, session, manualRo
     const fark    = sayilan !== null && sistem !== null ? sayilan - sistem : null
 
     const wsRow = ws.addRow({
-      siraNo: row.siraNo, kod: row.kod, ad: row.ad, adres: row.adres,
-      parti: row.parti, sayim: sistem, sayilan, fark, birim: row.birim,
+      siraNo: row.siraNo, kod: row.kod, ad: row.ad, sscc: row.sscc, adres: row.adres,
+      parti: row.parti, durum: row.durum, paletAdeti: row.paletAdeti,
+      sayim: sistem, sayilan, fark, birim: row.birim,
     })
 
     wsRow.eachCell(cell => {
@@ -585,14 +589,14 @@ export async function exportRedbullRaporFarklar(discrepancies, session, manualRo
     sepRow.getCell(1).font      = { bold: true, size: 10, color: { argb: 'FF92400E' } }
     sepRow.getCell(1).fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }
     sepRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' }
-    ws.mergeCells(`A${sepRow.number}:J${sepRow.number}`)
+    ws.mergeCells(`A${sepRow.number}:M${sepRow.number}`)
     sepRow.height = 18
 
     manualRows.forEach((row, i) => {
       const miktar = parseFloat(row.miktar) || 0
       const wsRow  = ws.addRow({
         siraNo: i + 1, kod: row.kod, ad: row.ad, adres: row.adres,
-        parti: row.parti, sayim: 0, sayilan: miktar, fark: miktar,
+        parti: row.parti, durum: row.durum, sayim: 0, sayilan: miktar, fark: miktar,
         birim: row.birim, not: row.not,
       })
       wsRow.eachCell(cell => {
@@ -626,18 +630,20 @@ export async function exportRedbullResults(rows, results, session, firma = {}) {
   const ws = workbook.addWorksheet('Sayım Sonuçları')
 
   ws.columns = [
-    { header: 'Sıra No.',     key: 'siraNo',  width: 8  },
-    { header: 'Adres',        key: 'adres',   width: 16 },
-    { header: 'Stok Kodu',    key: 'kod',     width: 16 },
-    { header: 'Stok Adı',     key: 'ad',      width: 35 },
-    { header: 'Lot',          key: 'parti',   width: 16 },
-    { header: 'Alisan Statu', key: 'durum',   width: 20 },
-    { header: 'Sistem',       key: 'sayim',   width: 14 },
-    { header: 'Sayılan',      key: 'sayilan', width: 12 },
-    { header: 'Fark',         key: 'fark',    width: 10 },
-    { header: 'Birim',        key: 'birim',   width: 8  },
-    { header: 'Onay Durumu',  key: 'status',  width: 12 },
-    { header: 'Not',          key: 'notlar',  width: 25 },
+    { header: 'Sıra No.',     key: 'siraNo',     width: 8  },
+    { header: 'Adres',        key: 'adres',      width: 16 },
+    { header: 'Stok Kodu',    key: 'kod',        width: 16 },
+    { header: 'Stok Adı',     key: 'ad',         width: 35 },
+    { header: 'SSCC',         key: 'sscc',       width: 22 },
+    { header: 'Lot',          key: 'parti',      width: 16 },
+    { header: 'Alisan Statu', key: 'durum',      width: 18 },
+    { header: 'Palet Adeti',  key: 'paletAdeti', width: 12 },
+    { header: 'Sistem',       key: 'sayim',      width: 14 },
+    { header: 'Sayılan',      key: 'sayilan',    width: 12 },
+    { header: 'Fark',         key: 'fark',       width: 10 },
+    { header: 'Birim',        key: 'birim',      width: 8  },
+    { header: 'Onay Durumu',  key: 'status',     width: 12 },
+    { header: 'Not',          key: 'notlar',     width: 25 },
   ]
 
   ws.getRow(1).eachCell(cell => {
@@ -654,8 +660,8 @@ export async function exportRedbullResults(rows, results, session, firma = {}) {
     const fark    = sayilan !== null && sistem !== null ? sayilan - sistem : null
 
     const wsRow = ws.addRow({
-      siraNo: row.siraNo, adres: row.adres, kod: row.kod, ad: row.ad,
-      parti: row.parti, durum: row.durum,
+      siraNo: row.siraNo, adres: row.adres, kod: row.kod, ad: row.ad, sscc: row.sscc,
+      parti: row.parti, durum: row.durum, paletAdeti: row.paletAdeti,
       sayim: sistem, sayilan, fark, birim: row.birim,
       status: res.status || '', notlar: res.notlar || '',
     })

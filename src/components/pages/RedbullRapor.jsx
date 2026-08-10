@@ -212,8 +212,10 @@ export default function RedbullRapor({ onNavigate }) {
               <thead>
                 <tr className="bg-slate-50 text-[11px] mono text-slate-500 uppercase tracking-wider border-b border-slate-200">
                   <th className="px-3 py-1.5">Stok Kodu / Adı</th>
+                  <th className="px-3 py-1.5">SSCC</th>
                   <th className="px-3 py-1.5">Lot</th>
                   <th className="px-3 py-1.5">Alisan Statu</th>
+                  <th className="px-3 py-1.5 text-right">Palet Adeti</th>
                   <th className="px-3 py-1.5">Adres</th>
                   <th className="px-3 py-1.5 text-right">Sistem</th>
                   <th className="px-3 py-1.5 text-right">Sayılan</th>
@@ -229,8 +231,10 @@ export default function RedbullRapor({ onNavigate }) {
                       <p className="mono font-semibold text-blue-700 text-[11px]">{row.kod}</p>
                       <p className="text-slate-700">{row.ad}</p>
                     </td>
+                    <td className="px-3 py-1.5 mono text-slate-400 text-[10.5px]">{row.sscc || '—'}</td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.parti || '—'}</td>
                     <td className="px-3 py-1.5"><RedbullDurumBadge durum={row.durum} /></td>
+                    <td className="px-3 py-1.5 text-right mono text-slate-500 text-[12px]">{row.paletAdeti || '—'}</td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.adres}</td>
                     <td className="px-3 py-1.5 text-right mono font-medium">
                       {row.sayim} <span className="text-slate-400 text-[11px]">{row.birim}</span>

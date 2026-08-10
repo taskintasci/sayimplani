@@ -115,7 +115,7 @@ export default function ExcelYukle({ onNavigate }) {
           {(isWms31
             ? ['Adres', 'Stok Kodu', 'Stok Adı', 'Beyanname', 'Durum Adı', 'Kategori', 'Palet Barkodu', 'Palet Adeti', 'Toplam Stok', 'Rezerve Adet', 'Depo Kalan Stok', 'Birim Adı']
             : isRedbull
-            ? ['Address', 'Material', 'Material Name', 'Lot', 'Alisan Statu', 'Adet', 'Birim', 'Açıklama']
+            ? ['Address', 'Material', 'Material Name', 'SSCC', 'Lot', 'Palet', 'Alisan Statu', 'Adet', 'Birim', 'Açıklama']
             : ['Adres', 'Kod', 'Ad', 'Parti', 'Durum', 'Palet Adet', 'Birim 1', 'Son Kırılım Miktar', 'Son Kırılım Birim', 'Barkod']
           ).map(col => (
             <div key={col} className="flex items-center gap-1.5 text-[12.5px] text-slate-600">

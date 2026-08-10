@@ -90,9 +90,11 @@ const RedbullPrintSheet = forwardRef(function RedbullPrintSheet(
                 <th style={thStyle({ textAlign: 'center', width: 20 })}>#</th>
                 <th style={thStyle({ textAlign: 'left',   width: 90 })}>ADRES</th>
                 <th style={thStyle({ textAlign: 'left',   width: 85 })}>STOK KODU</th>
-                <th style={thStyle({ textAlign: 'left',   width: 240 })}>STOK ADI</th>
+                <th style={thStyle({ textAlign: 'left',   width: 200 })}>STOK ADI</th>
+                <th style={thStyle({ textAlign: 'center', width: 110 })}>SSCC</th>
                 <th style={thStyle({ textAlign: 'center', width: 90 })}>LOT</th>
                 <th style={thStyle({ textAlign: 'left',   width: 90 })}>ALISAN STATU</th>
+                <th style={thStyle({ textAlign: 'right',  width: 50 })}>PALET ADETİ</th>
                 <th style={thStyle({ textAlign: 'center', width: 65, background: '#1d4ed8' })}>SAYIM MİKTARI</th>
                 <th style={thStyle({ textAlign: 'center', width: 55 })}>BİRİM</th>
                 <th style={thStyle({ textAlign: 'left'               })}>NOT</th>
@@ -113,8 +115,10 @@ const RedbullPrintSheet = forwardRef(function RedbullPrintSheet(
                     <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '6.5pt' }}>{item.adres}</td>
                     <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '6.5pt', color: '#2563eb', fontWeight: 700 }}>{item.kod}</td>
                     <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', fontSize: '6pt', fontWeight: 500 }}>{item.ad}</td>
+                    <td style={{ padding: '2px 4px', textAlign: 'center', border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '5.5pt', color: '#94a3b8' }}>{item.sscc}</td>
                     <td style={{ padding: '2px 4px', textAlign: 'center', border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '6pt', color: '#64748b' }}>{item.parti}</td>
                     <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', fontSize: '6pt', color: '#64748b' }}>{item.durum}</td>
+                    <td style={{ padding: '2px 4px', textAlign: 'right', border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '6pt', color: '#64748b' }}>{item.paletAdeti}</td>
                     <td style={{
                       padding: '2px 4px', textAlign: 'right',
                       border: '1px solid #3b82f6',

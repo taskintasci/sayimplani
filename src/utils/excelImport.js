@@ -119,15 +119,17 @@ function isWms31(headers) {
 
 // ─── WMS Depo Redbull sütun haritası ──────────────────────────────────────
 // Red Bull Gıda'nın kendi WMS'inden alınan "Sayıma gelecek Rapor" formatı.
-// SSCC/Palet/Best Before Date/Bina/Koridor/Sutun/Sıra/Kat sütunları BİLİNÇLİ
-// olarak map EDİLMEZ — konum verisi zaten tek parça 'Address' sütununda
-// (Bina-Koridor-Sutun-Sıra-Kat, tire ile ayrık, bkz. adresUtils.js
-// parseAdresRedbull), SKT'ye ihtiyaç yok (kullanıcı kararı).
+// Best Before Date/Bina/Koridor/Sutun/Sıra/Kat sütunları BİLİNÇLİ olarak map
+// EDİLMEZ — konum verisi zaten tek parça 'Address' sütununda (Bina-Koridor-
+// Sutun-Sıra-Kat, tire ile ayrık, bkz. adresUtils.js parseAdresRedbull),
+// SKT'ye ihtiyaç yok (kullanıcı kararı).
 const REDBULL_MAP = {
   'address'        : 'adres',
   'material'       : 'kod',
   'material name'  : 'ad',
+  'sscc'           : 'sscc',
   'lot'            : 'parti',
+  'palet'          : 'paletAdeti',
   'alisan statu'   : 'durum',
   'adet'           : 'sayim',
   'birim'          : 'birim',
