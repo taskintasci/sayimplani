@@ -3,7 +3,7 @@ import { forwardRef } from 'react'
 const ROWS_PER_PAGE = 25
 
 const RedbullPrintSheet = forwardRef(function RedbullPrintSheet(
-  { rows, results, session, mode = 'sayim', hideSayilan = false, sayimTuru = '', firmaUnvani = '' },
+  { rows, results, session, mode = 'sayim', hideSistem = false, hideSayilan = false, sayimTuru = '', firmaUnvani = '' },
   ref
 ) {
   const blindMode    = mode === 'kor'
@@ -95,6 +95,7 @@ const RedbullPrintSheet = forwardRef(function RedbullPrintSheet(
                 <th style={thStyle({ textAlign: 'center', width: 90 })}>LOT</th>
                 <th style={thStyle({ textAlign: 'left',   width: 90 })}>ALISAN STATU</th>
                 <th style={thStyle({ textAlign: 'right',  width: 50 })}>PALET ADETİ</th>
+                <th style={thStyle({ textAlign: 'right',  width: 55 })}>SİSTEM</th>
                 <th style={thStyle({ textAlign: 'center', width: 65, background: '#1d4ed8' })}>SAYIM MİKTARI</th>
                 <th style={thStyle({ textAlign: 'center', width: 55 })}>BİRİM</th>
                 <th style={thStyle({ textAlign: 'left'               })}>NOT</th>
@@ -119,6 +120,7 @@ const RedbullPrintSheet = forwardRef(function RedbullPrintSheet(
                     <td style={{ padding: '2px 4px', textAlign: 'center', border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '6pt', color: '#64748b' }}>{item.parti}</td>
                     <td style={{ padding: '2px 4px', border: '1px solid #e2e8f0', fontSize: '6pt', color: '#64748b' }}>{item.durum}</td>
                     <td style={{ padding: '2px 4px', textAlign: 'right', border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '6pt', color: '#64748b' }}>{item.paletAdeti}</td>
+                    <td style={{ padding: '2px 4px', textAlign: 'right', border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '6.5pt', color: '#64748b' }}>{hideSistem ? ' ' : item.sayim}</td>
                     <td style={{
                       padding: '2px 4px', textAlign: 'right',
                       border: '1px solid #3b82f6',

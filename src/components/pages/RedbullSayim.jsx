@@ -398,7 +398,7 @@ export default function RedbullSayim({ onNavigate }) {
       )}
 
       <div className="hidden">
-        <RedbullPrintSheet ref={printRef} rows={filtered} results={results} session={session} mode="sayim" hideSayilan={hideSayilan} sayimTuru="Stok Sayımı" firmaUnvani={firmaProfile?.unvan} />
+        <RedbullPrintSheet ref={printRef} rows={filtered} results={results} session={session} mode="sayim" hideSistem={hideSistem} hideSayilan={hideSayilan} sayimTuru="Stok Sayımı" firmaUnvani={firmaProfile?.unvan} />
       </div>
 
       {gorevModal && (
