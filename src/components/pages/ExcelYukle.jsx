@@ -49,7 +49,7 @@ export default function ExcelYukle({ onNavigate }) {
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold text-slate-800 mb-1">{isWms31 ? 'WMS_Rapor_31 Yükle' : isRedbull ? 'WMS Depo Redbull Yükle' : 'RAPOR5 Yükle'}</h1>
-      <p className="text-sm text-slate-500 mb-6">Her sayım için bir kez RAPOR5 veya WMS_Rapor_31 yükleyin. Değiştirmek için Panel sayfasını kullanın.</p>
+      <p className="text-sm text-slate-500 mb-6">Her sayım için bir kez Los Stok Raporu veya Wms Stok Raporu yükleyin. Değiştirmek için Panel sayfasını kullanın.</p>
 
       {/* Drop zone */}
       <div
