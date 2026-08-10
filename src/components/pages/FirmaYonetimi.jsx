@@ -4,8 +4,9 @@ import { SABLON } from '../../constants'
 import FirmaMasterdataModal from './FirmaMasterdataModal'
 
 const SABLON_OPTIONS = [
-  { id: SABLON.STANDART, label: 'LOS Sayım',          desc: 'Tüm Stok Sayımı, Kör Sayım, Hareketlilik, Membran sayfa ailesi (RAPOR5 / SKU)' },
-  { id: SABLON.WMS31,    label: 'WMS Antrepo Sayım',  desc: 'Palet barkodu / beyanname bazlı depo sayım sayfa ailesi (WMS_Rapor_31)' },
+  { id: SABLON.STANDART,    label: 'LOS Sayım',                desc: 'Tüm Stok Sayımı, Kör Sayım, Hareketlilik, Membran sayfa ailesi (RAPOR5 / SKU)' },
+  { id: SABLON.WMS31,       label: 'WMS Antrepo Sayım',        desc: 'Palet barkodu / beyanname bazlı depo sayım sayfa ailesi (WMS_Rapor_31)' },
+  { id: SABLON.WMS_REDBULL, label: 'WMS Depo Sayım (Redbull)', desc: 'Bina/Koridor/Sutun/Sıra/Kat adres bazlı depo sayım sayfa ailesi' },
 ]
 
 const EMPTY_FORM = { ad: '', unvan: '', sablon: SABLON.STANDART }

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { signOut } from 'firebase/auth'
 import { auth } from '../../firebase/index'
 import useStore from '../../store/useStore'
-import { sortRows } from '../../utils/adresUtils'
+import { sortRows, sortRowsRedbull } from '../../utils/adresUtils'
 import ComboBox from '../shared/ComboBox'
 import ProfilPanel from '../shared/ProfilPanel'
 
@@ -24,7 +24,7 @@ function siralamaMembran(rows) {
 // ═══════════════════════════════════════════════════════════════════════════
 // Swipe kart — sağa kaydır = onayla, sola kaydır = eksik/fazla gir
 // ═══════════════════════════════════════════════════════════════════════════
-function SwipeCard({ row, sayilanMiktar, onConfirm, onEdit, isMembran, isAntrepo, locked }) {
+function SwipeCard({ row, sayilanMiktar, onConfirm, onEdit, isMembran, isAntrepo, isRedbull, locked }) {
   const [dx, setDx] = useState(0)
   const startX = useRef(null)
   const TH = 90
@@ -118,7 +118,7 @@ function SwipeCard({ row, sayilanMiktar, onConfirm, onEdit, isMembran, isAntrepo
         {/* Kod + parti + palet barkodu (sadece WMS Antrepo Sayım) */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mb-3 shrink-0">
           <span className="text-slate-500 mono" style={{ fontSize: 15 }}>{row.kod}</span>
-          {row.parti && <span className="text-slate-400 mono text-xs">{isAntrepo ? 'Beyanname' : 'Parti'}: {row.parti}</span>}
+          {row.parti && <span className="text-slate-400 mono text-xs">{isAntrepo ? 'Beyanname' : isRedbull ? 'Lot' : 'Parti'}: {row.parti}</span>}
           {isAntrepo && row.paletBarkodu && <span className="text-slate-400 mono text-xs">Palet: {row.paletBarkodu}</span>}
         </div>
 
@@ -200,16 +200,18 @@ export default function SayimciEkran({ mode = 'self' }) {
   useEffect(() => () => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current) }, [])
 
   const isMembran = gorev?.sayimTipi === 'membran'
-  const isKor     = gorev?.sayimTipi === 'kor' || gorev?.sayimTipi === 'antrepokor'
+  const isKor     = gorev?.sayimTipi === 'kor' || gorev?.sayimTipi === 'antrepokor' || gorev?.sayimTipi === 'redbullkor'
   const isAntrepo = gorev?.sayimTipi === 'antrepo' || gorev?.sayimTipi === 'antrepokor'
+  const isRedbull = gorev?.sayimTipi === 'redbull' || gorev?.sayimTipi === 'redbullkor'
 
   const atanan = useMemo(() => {
     if (!gorev) return []
     const ids = gorev.atananRows || []
     const base = ids.length > 0 ? rows.filter(r => ids.includes(r.id)) : rows
     if (isMembran) return siralamaMembran(base)
+    if (isRedbull) return sortRowsRedbull(base, sortType)
     return sortRows(base, sortType)
-  }, [gorev, rows, sortType, isMembran])
+  }, [gorev, rows, sortType, isMembran, isRedbull])
 
   const sayilanAdet = useMemo(() =>
     atanan.filter(r => { const m = results[r.id]?.miktar; return m !== undefined && m !== '' }).length,
@@ -476,6 +478,9 @@ export default function SayimciEkran({ mode = 'self' }) {
                                 {(g.sayimTipi === 'antrepo' || g.sayimTipi === 'antrepokor') && (
                                   <span className="ms text-blue-500 ml-1" style={{ fontSize: 16 }}>qr_code_scanner</span>
                                 )}
+                                {(g.sayimTipi === 'redbull' || g.sayimTipi === 'redbullkor') && (
+                                  <span className="ms text-orange-500 ml-1" style={{ fontSize: 16 }}>local_shipping</span>
+                                )}
                               </div>
                               {counted !== null && (
                                 <span className={
@@ -559,8 +564,17 @@ export default function SayimciEkran({ mode = 'self' }) {
               className="bg-white border border-slate-300 rounded-lg px-2.5 py-2.5 text-xs text-slate-600 focus:outline-none focus:border-blue-400 shrink-0"
               style={{ minHeight: 44 }}
             >
-              <option value="1">Raf › Sıra › Kolon › Göz</option>
-              <option value="2">Raf › Sıra › Göz › Kolon</option>
+              {isRedbull ? (
+                <>
+                  <option value="1">Bina › Koridor › Sutun › Sıra › Kat</option>
+                  <option value="2">Bina › Koridor › Sutun › Kat › Sıra</option>
+                </>
+              ) : (
+                <>
+                  <option value="1">Raf › Sıra › Kolon › Göz</option>
+                  <option value="2">Raf › Sıra › Göz › Kolon</option>
+                </>
+              )}
             </select>
           )}
           {isMembran && (
@@ -599,7 +613,7 @@ export default function SayimciEkran({ mode = 'self' }) {
                     <th className="px-3 py-2.5 w-24">Adres</th>
                     <th className="px-3 py-2.5 w-28">Kod</th>
                     <th className="px-3 py-2.5">Ad</th>
-                    <th className="px-3 py-2.5 w-32">{isAntrepo ? 'Beyanname Numarası' : 'Parti'}</th>
+                    <th className="px-3 py-2.5 w-32">{isAntrepo ? 'Beyanname Numarası' : isRedbull ? 'Lot' : 'Parti'}</th>
                     {isAntrepo && <th className="px-3 py-2.5 w-28">Palet Barkodu</th>}
                     <th className="px-3 py-2.5 w-20 text-right sistem-col">Sistem</th>
                     <th className="px-3 py-2.5 w-24 text-right text-blue-600 sayilan-col">Sayılan ▾</th>
@@ -723,7 +737,7 @@ export default function SayimciEkran({ mode = 'self' }) {
         </div>
 
         {!locked && manuelOpen && (
-          <ManuelModal onClose={() => setManuelOpen(false)} addManualRow={manuelAddFn} manualRows={manuelRows} isKor={isKor} skuMasterdata={skuMasterdata} lokasyonlar={lokasyonlar} />
+          <ManuelModal onClose={() => setManuelOpen(false)} addManualRow={manuelAddFn} manualRows={manuelRows} isKor={isKor} isRedbull={isRedbull} skuMasterdata={skuMasterdata} lokasyonlar={lokasyonlar} />
         )}
       </div>
     )
@@ -766,6 +780,7 @@ export default function SayimciEkran({ mode = 'self' }) {
             onEdit={editAc}
             isMembran={isMembran}
             isAntrepo={isAntrepo}
+            isRedbull={isRedbull}
             locked={locked}
           />
         )}
@@ -821,6 +836,7 @@ export default function SayimciEkran({ mode = 'self' }) {
             addManualRow={manuelAddFn}
             manualRows={manuelRows}
             isKor={isKor}
+            isRedbull={isRedbull}
             skuMasterdata={skuMasterdata}
             lokasyonlar={lokasyonlar}
           />
@@ -962,7 +978,7 @@ function DurumRozet({ durum }) {
 
 const MANUEL_BOS = { kod: '', ad: '', adres: '', parti: '', durum: '', miktar: '', birim: '', not: '' }
 
-function ManuelModal({ onClose, addManualRow, manualRows, isKor, skuMasterdata, lokasyonlar }) {
+function ManuelModal({ onClose, addManualRow, manualRows, isKor, isRedbull, skuMasterdata, lokasyonlar }) {
   const [form, setForm] = useState(MANUEL_BOS)
 
   // Arka plan sayfası kaydırılabilir kaldıkça mobilde bir input'a dokununca
@@ -1081,14 +1097,14 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, skuMasterdata, 
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Parti</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{isRedbull ? 'Lot' : 'Parti'}</label>
               <input value={form.parti} onChange={e => setForm(f => ({ ...f, parti: e.target.value }))}
-                type="text" placeholder="PT240101" className="w-full border border-slate-300 rounded-xl px-4 py-3 mono text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400" />
+                type="text" placeholder={isRedbull ? '2541388' : 'PT240101'} className="w-full border border-slate-300 rounded-xl px-4 py-3 mono text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400" />
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Durum</label>
+              <label className="block text-xs font-medium text-slate-500 mb-1">{isRedbull ? 'Alisan Statu' : 'Durum'}</label>
               <input value={form.durum} onChange={e => setForm(f => ({ ...f, durum: e.target.value }))}
-                type="text" placeholder="Serbest / KK..." className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400" />
+                type="text" placeholder={isRedbull ? 'Normal / İade...' : 'Serbest / KK...'} className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400" />
             </div>
           </div>
           <div className="flex gap-3">

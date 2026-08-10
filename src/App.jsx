@@ -29,6 +29,11 @@ const AntrepoSayim        = lazy(() => import('./components/pages/AntrepoSayim')
 const AntrepoRapor        = lazy(() => import('./components/pages/AntrepoRapor'))
 const AntrepoKorSayim     = lazy(() => import('./components/pages/AntrepoKorSayim'))
 const AntrepoKorSayimRapor = lazy(() => import('./components/pages/AntrepoKorSayimRapor'))
+const RedbullPanel        = lazy(() => import('./components/pages/RedbullPanel'))
+const RedbullSayim        = lazy(() => import('./components/pages/RedbullSayim'))
+const RedbullRapor        = lazy(() => import('./components/pages/RedbullRapor'))
+const RedbullKorSayim     = lazy(() => import('./components/pages/RedbullKorSayim'))
+const RedbullKorSayimRapor = lazy(() => import('./components/pages/RedbullKorSayimRapor'))
 
 // Oturum seçilmeden de erişilebilen sayfalar (Sidebar/TopBar kabuğu içinde)
 const SESSIONLESS = ['giris', 'ayarlar']
@@ -61,6 +66,14 @@ const PAGES = {
   antrepokor:       { Component: AntrepoKorSayim,      fullHeight: true,  roles: YON, sablon: [SABLON.WMS31] },
   antrepokoranaliz: { Component: KorSayimAnalizi,      fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS31] },
   antrepokorrapor:  { Component: AntrepoKorSayimRapor, fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS31] },
+  redbullpanel:     { Component: RedbullPanel,         fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  redbullsayim:     { Component: RedbullSayim,         fullHeight: true,  roles: YON, sablon: [SABLON.WMS_REDBULL] },
+  redbullanaliz:    { Component: SayimAnalizi,         fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  redbullrapor:     { Component: RedbullRapor,         fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  redbullskuliste:  { Component: SkuListesi,           fullHeight: true,  roles: YON, sablon: [SABLON.WMS_REDBULL] },
+  redbullkor:       { Component: RedbullKorSayim,      fullHeight: true,  roles: YON, sablon: [SABLON.WMS_REDBULL] },
+  redbullkoranaliz: { Component: KorSayimAnalizi,      fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  redbullkorrapor:  { Component: RedbullKorSayimRapor, fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
 }
 
 function ErisimYok() {
@@ -196,7 +209,10 @@ export default function App() {
     if (!firmaProfile) return
     const pageDef = PAGES[activePage]
     const uygun = pageDef && (!pageDef.sablon || pageDef.sablon.includes(firmaProfile.sablon))
-    if (!uygun) setActivePage(firmaProfile.sablon === SABLON.WMS31 ? 'antrepopanel' : 'panel')
+    if (!uygun) setActivePage(
+      firmaProfile.sablon === SABLON.WMS31 ? 'antrepopanel' :
+      firmaProfile.sablon === SABLON.WMS_REDBULL ? 'redbullpanel' : 'panel'
+    )
   }, [firmaProfile?.sablon])
 
   // Auth durumu henüz belli değil

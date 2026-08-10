@@ -133,7 +133,9 @@ function EmptyMini({ icon, text }) {
 export default function Giris({ onNavigate }) {
   const { sessions, sessionsLoading, loadSessions, setActiveSession, createSession, deleteSession, userRole, firmaProfile } = useStore()
   const isYonetici = userRole === 'yonetici' || userRole === 'superadmin'
-  const panelRoute = firmaProfile?.sablon === SABLON.WMS31 ? 'antrepopanel' : 'panel'
+  const panelRoute =
+    firmaProfile?.sablon === SABLON.WMS31 ? 'antrepopanel' :
+    firmaProfile?.sablon === SABLON.WMS_REDBULL ? 'redbullpanel' : 'panel'
   const [selectedId, setSelectedId] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
   const [creating, setCreating] = useState(false)

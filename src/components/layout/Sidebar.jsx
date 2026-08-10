@@ -55,6 +55,15 @@ const MENU = [
   { id: 'antrepokoranaliz', icon: 'query_stats',     label: 'Kör Sayım Analizi',      roles: YON_KONT, sablon: [SABLON.WMS31] },
   { id: 'antrepokorrapor',  icon: 'summarize',       label: 'Kör Sayım Raporu',       roles: YON_KONT, sablon: [SABLON.WMS31] },
   { divider: true,      roles: YON_KONT },
+  { id: 'redbullpanel',     icon: 'grid_view',       label: 'Panel',                  roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullsayim',     icon: 'fact_check',      label: 'Tüm Stok Sayımı',        roles: YON, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullanaliz',    icon: 'monitoring',      label: 'Sayım Analizi',          roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullrapor',     icon: 'analytics',       label: 'Sayım Raporu',           roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullskuliste',  icon: 'checklist',       label: 'SKU Listesi',            roles: YON, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkor',       icon: 'visibility_off',  label: 'Kör Sayım',              roles: YON, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkoranaliz', icon: 'query_stats',     label: 'Kör Sayım Analizi',      roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkorrapor',  icon: 'summarize',       label: 'Kör Sayım Raporu',       roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { divider: true,      roles: YON_KONT },
   { id: 'sayimciekran', icon: 'swipe',          label: 'Sayımcı Ekranı',          roles: YON_KONT },
 ]
 

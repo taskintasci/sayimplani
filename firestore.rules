@@ -35,7 +35,7 @@ service cloud.firestore {
 
       allow create: if isSuperAdmin()
         && isNonEmptyString(request.resource.data.ad)
-        && request.resource.data.sablon in ['standart', 'wms31']
+        && request.resource.data.sablon in ['standart', 'wms31', 'wms_redbull']
         && request.resource.data.aktif is bool;
 
       // Süper yönetici ad/unvan/sablon/aktif dahil her alanı değiştirebilir.
@@ -46,7 +46,7 @@ service cloud.firestore {
       allow update: if (
         isSuperAdmin()
         && isNonEmptyString(request.resource.data.ad)
-        && request.resource.data.sablon in ['standart', 'wms31']
+        && request.resource.data.sablon in ['standart', 'wms31', 'wms_redbull']
         && request.resource.data.aktif is bool
       ) || (
         isYonetici()

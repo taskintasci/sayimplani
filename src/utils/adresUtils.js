@@ -9,6 +9,10 @@ const FILTRE_ETIKETLERI = {
   filterKolon:    'Kolon',
   filterGoz:      'Göz',
   filterGirisGun: 'Giriş Günü',
+  filterBina:     'Bina',
+  filterKoridor:  'Koridor',
+  filterSutun:    'Sutun',
+  filterKat:      'Kat',
 }
 
 /** Sayım sayfalarındaki aktif filtreleri "Raf: A, B · Sıra: 1" gibi okunabilir
@@ -139,4 +143,94 @@ export function computeFilterOptions(sourceRows, filters) {
   }
 
   return result
+}
+
+// ─── WMS Depo Redbull — 5 parçalı adres şeması (Bina-Koridor-Sutun-Sıra-Kat) ──
+// Akkim/Epson'un Raf-Sıra-Kolon-Göz şemasından tamamen ayrı, paralel bir
+// fonksiyon seti. Yukarıdaki parseAdres/sortRows/computeFilterOptions'a
+// kasıtlı olarak dokunulmadı.
+
+export function parseAdresRedbull(adres) {
+  const parts = String(adres || '').split('-')
+  return {
+    bina:    parts[0] || '',
+    koridor: parts[1] || '',
+    sutun:   parts[2] || '',
+    sira:    parts[3] || '',
+    kat:     parts[4] || '',
+  }
+}
+
+const numCmp = (a, b) => a.localeCompare(b, 'tr', { numeric: true })
+
+/** sortType==='2' iken Sıra/Kat önceliği değişir (Bina/Koridor/Sutun her zaman
+ *  ilk üç sırada sabit) — mevcut Raf/Sıra/Kolon/Göz sortType deseniyle aynı UX. */
+export function sortRowsRedbull(rows, sortType) {
+  return [...rows].sort((a, b) => {
+    const pa = parseAdresRedbull(a.adres), pb = parseAdresRedbull(b.adres)
+    if (pa.bina !== pb.bina) return numCmp(pa.bina, pb.bina)
+    if (pa.koridor !== pb.koridor) return numCmp(pa.koridor, pb.koridor)
+    if (pa.sutun !== pb.sutun) return numCmp(pa.sutun, pb.sutun)
+    if (sortType === '2') {
+      if (pa.kat !== pb.kat) return numCmp(pa.kat, pb.kat)
+      return numCmp(pa.sira, pb.sira)
+    }
+    if (pa.sira !== pb.sira) return numCmp(pa.sira, pb.sira)
+    return numCmp(pa.kat, pb.kat)
+  })
+}
+
+export function getUniqueAdresValuesRedbull(rows) {
+  const binaSet = new Set(), koridorSet = new Set(), sutunSet = new Set(), siraSet = new Set(), katSet = new Set()
+  rows.forEach(r => {
+    const p = parseAdresRedbull(r.adres)
+    if (p.bina) binaSet.add(p.bina)
+    if (p.koridor) koridorSet.add(p.koridor)
+    if (p.sutun) sutunSet.add(p.sutun)
+    if (p.sira) siraSet.add(p.sira)
+    if (p.kat) katSet.add(p.kat)
+  })
+  return {
+    binalar:    [...binaSet].sort(numCmp),
+    koridorlar: [...koridorSet].sort(numCmp),
+    sutunlar:   [...sutunSet].sort(numCmp),
+    siralar:    [...siraSet].sort(numCmp),
+    katlar:     [...katSet].sort(numCmp),
+  }
+}
+
+/**
+ * computeFilterOptions'ın Redbull eşdeğeri (simetrik cascade filtre).
+ * Kategori/Ürün Tipi/Palet/Giriş Günü boyutları yok — Redbull excel'inde
+ * bu alanlar map edilmiyor.
+ */
+export function computeFilterOptionsRedbull(sourceRows, filters) {
+  const {
+    filterSearch = '', filterDurum = [],
+    filterBina = [], filterKoridor = [], filterSutun = [], filterSira = [], filterKat = [],
+  } = filters
+
+  function apply(rows, exclude) {
+    const q = filterSearch.trim().toLowerCase()
+    return rows.filter(r => {
+      if (q && !(r.kod?.toLowerCase().includes(q) || r.ad?.toLowerCase().includes(q) || r.parti?.toLowerCase().includes(q))) return false
+      if (exclude !== 'durum' && filterDurum.length > 0 && !filterDurum.includes(r.durum)) return false
+      const p = parseAdresRedbull(r.adres)
+      if (exclude !== 'bina'    && filterBina.length > 0    && !filterBina.includes(p.bina))       return false
+      if (exclude !== 'koridor' && filterKoridor.length > 0 && !filterKoridor.includes(p.koridor)) return false
+      if (exclude !== 'sutun'   && filterSutun.length > 0   && !filterSutun.includes(p.sutun))     return false
+      if (exclude !== 'sira'    && filterSira.length > 0    && !filterSira.includes(p.sira))       return false
+      if (exclude !== 'kat'     && filterKat.length > 0     && !filterKat.includes(p.kat))         return false
+      return true
+    })
+  }
+
+  return {
+    durumlar:   [...new Set(apply(sourceRows, 'durum').map(r => r.durum).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr')),
+    binalar:    [...new Set(apply(sourceRows, 'bina').map(r => parseAdresRedbull(r.adres).bina).filter(Boolean))].sort(numCmp),
+    koridorlar: [...new Set(apply(sourceRows, 'koridor').map(r => parseAdresRedbull(r.adres).koridor).filter(Boolean))].sort(numCmp),
+    sutunlar:   [...new Set(apply(sourceRows, 'sutun').map(r => parseAdresRedbull(r.adres).sutun).filter(Boolean))].sort(numCmp),
+    siralar:    [...new Set(apply(sourceRows, 'sira').map(r => parseAdresRedbull(r.adres).sira).filter(Boolean))].sort(numCmp),
+    katlar:     [...new Set(apply(sourceRows, 'kat').map(r => parseAdresRedbull(r.adres).kat).filter(Boolean))].sort(numCmp),
+  }
 }

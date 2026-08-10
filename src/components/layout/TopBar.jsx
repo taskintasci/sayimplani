@@ -24,6 +24,14 @@ const PAGE_NAMES = {
   antrepokor: 'Kör Sayım',
   antrepokoranaliz: 'Kör Sayım Analizi',
   antrepokorrapor: 'Kör Sayım Raporu',
+  redbullpanel: 'Panel',
+  redbullsayim: 'Tüm Stok Sayımı',
+  redbullanaliz: 'Sayım Analizi',
+  redbullrapor: 'Sayım Raporu',
+  redbullskuliste: 'SKU Listesi',
+  redbullkor: 'Kör Sayım',
+  redbullkoranaliz: 'Kör Sayım Analizi',
+  redbullkorrapor: 'Kör Sayım Raporu',
 }
 
 export default function TopBar({ activePage, onMenu }) {

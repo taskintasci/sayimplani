@@ -117,6 +117,33 @@ function isWms31(headers) {
   return WMS31_SIGNATURES.some(sig => norms.some(h => h.includes(sig)))
 }
 
+// ─── WMS Depo Redbull sütun haritası ──────────────────────────────────────
+// Red Bull Gıda'nın kendi WMS'inden alınan "Sayıma gelecek Rapor" formatı.
+// SSCC/Palet/Best Before Date/Bina/Koridor/Sutun/Sıra/Kat sütunları BİLİNÇLİ
+// olarak map EDİLMEZ — konum verisi zaten tek parça 'Address' sütununda
+// (Bina-Koridor-Sutun-Sıra-Kat, tire ile ayrık, bkz. adresUtils.js
+// parseAdresRedbull), SKT'ye ihtiyaç yok (kullanıcı kararı).
+const REDBULL_MAP = {
+  'address'        : 'adres',
+  'material'       : 'kod',
+  'material name'  : 'ad',
+  'lot'            : 'parti',
+  'alisan statu'   : 'durum',
+  'adet'           : 'sayim',
+  'birim'          : 'birim',
+  'açıklama'       : 'aciklama',
+  'aciklama'       : 'aciklama',
+}
+
+// WMS Depo Redbull ayırt edici başlıkları — RAPOR5_SIGNATURES/WMS31_SIGNATURES
+// ile çakışmaz.
+const REDBULL_SIGNATURES = ['sscc', 'alisan statu', 'best before date']
+
+function isRedbull(headers) {
+  const norms = headers.map(norm)
+  return REDBULL_SIGNATURES.some(sig => norms.some(h => h.includes(sig)))
+}
+
 // Her iki format için: header adı → internal field
 function buildColMap(headers, fieldMap) {
   const colMap = {}
@@ -219,8 +246,9 @@ export function parseExcelFile(file) {
 
           const isW31 = isWms31(headers)
           const isR5  = !isW31 && isRapor5(headers)
-          const format = isW31 ? 'wms31' : isR5 ? 'rapor5' : 'sku'
-          const fieldMap = isW31 ? WMS31_MAP : isR5 ? RAPOR5_MAP : SKU_MAP
+          const isRB  = !isW31 && !isR5 && isRedbull(headers)
+          const format = isW31 ? 'wms31' : isR5 ? 'rapor5' : isRB ? 'redbull' : 'sku'
+          const fieldMap = isW31 ? WMS31_MAP : isR5 ? RAPOR5_MAP : isRB ? REDBULL_MAP : SKU_MAP
 
           const score = headers.filter(h => fieldMap[h]).length
           if (score > bestScore) {
@@ -233,7 +261,7 @@ export function parseExcelFile(file) {
 
         if (bestScore === 0) {
           reject(new Error(
-            'Tanınan sütun bulunamadı. Lütfen RAPOR5.xls, Sku_Sayım_Listesi.xlsx veya WMS_Rapor_31.xlsx yükleyin.'
+            'Tanınan sütun bulunamadı. Lütfen RAPOR5.xls, Sku_Sayım_Listesi.xlsx, WMS_Rapor_31.xlsx veya WMS Depo Redbull raporu yükleyin.'
           ))
           return
         }

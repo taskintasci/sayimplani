@@ -21,7 +21,8 @@ function SortHeader({ label, col, sortBy, sortDir, onSort, align, className = ''
 
 export default function SkuListesi({ onNavigate }) {
   const { rows, rowsLoading, korCodes, addKorCodes, firmaProfile } = useStore()
-  const isWms31 = firmaProfile?.sablon === SABLON.WMS31
+  const isWms31   = firmaProfile?.sablon === SABLON.WMS31
+  const isRedbull = firmaProfile?.sablon === SABLON.WMS_REDBULL
 
   const [search, setSearch]     = useState('')
   const [sortBy, setSortBy]     = useState('kod')
@@ -106,7 +107,7 @@ export default function SkuListesi({ onNavigate }) {
     if (selected.size === 0) return
     addKorCodes([...selected])
     setSelected(new Set())
-    onNavigate(isWms31 ? 'antrepokor' : 'kor')
+    onNavigate(isWms31 ? 'antrepokor' : isRedbull ? 'redbullkor' : 'kor')
   }
 
   return (

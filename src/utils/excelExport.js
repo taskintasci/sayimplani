@@ -529,3 +529,161 @@ export async function exportAntrepoResults(rows, results, session, firma = {}) {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+export async function exportRedbullRaporFarklar(discrepancies, session, manualRows = [], firma = {}) {
+  const { default: ExcelJS } = await import('exceljs')
+
+  const workbook = new ExcelJS.Workbook()
+  workbook.creator = 'Sayım Planı'
+  workbook.created = new Date()
+
+  const ws = workbook.addWorksheet('Mutabakat Raporu')
+
+  ws.columns = [
+    { header: 'Sıra No.',     key: 'siraNo',  width: 8  },
+    { header: 'Stok Kodu',    key: 'kod',     width: 16 },
+    { header: 'Stok Adı',     key: 'ad',      width: 35 },
+    { header: 'Adres',        key: 'adres',   width: 16 },
+    { header: 'Lot',          key: 'parti',   width: 16 },
+    { header: 'Sistem',       key: 'sayim',   width: 14 },
+    { header: 'Sayılan',      key: 'sayilan', width: 14 },
+    { header: 'Fark',         key: 'fark',    width: 12 },
+    { header: 'Birim',        key: 'birim',   width: 8  },
+    { header: 'Not',          key: 'not',     width: 25 },
+  ]
+
+  ws.getRow(1).eachCell(cell => {
+    cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1C1E' } }
+    cell.font      = { color: { argb: 'FFFFFFFF' }, bold: true, size: 10 }
+    cell.alignment = { vertical: 'middle', horizontal: 'center' }
+  })
+  ws.getRow(1).height = 18
+
+  discrepancies.forEach((row, i) => {
+    const sistem  = row.sayim  !== '' ? Number(String(row.sayim).replace(',', '.'))   : null
+    const sayilan = row.sayilan !== undefined ? Number(String(row.sayilan).replace(',', '.')) : null
+    const fark    = sayilan !== null && sistem !== null ? sayilan - sistem : null
+
+    const wsRow = ws.addRow({
+      siraNo: row.siraNo, kod: row.kod, ad: row.ad, adres: row.adres,
+      parti: row.parti, sayim: sistem, sayilan, fark, birim: row.birim,
+    })
+
+    wsRow.eachCell(cell => {
+      cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 === 1 ? 'FFF3F4F6' : 'FFFFFFFF' } }
+      cell.alignment = { vertical: 'middle' }
+    })
+    const farkCell = wsRow.getCell('fark')
+    farkCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fark !== null && fark < 0 ? 'FFFFF3CD' : fark > 0 ? 'FFD4EDDA' : 'FFF3F4F6' } }
+    farkCell.font = { bold: true, color: { argb: fark < 0 ? 'FF991B1B' : 'FF166534' } }
+  })
+
+  // ── Manuel eklenen kalemler (sistemde bulunmayan) ──────────────────────────
+  if (manualRows.length > 0) {
+    ws.addRow([])
+    const sepRow = ws.addRow(['SİSTEMDE BULUNMAYAN KALEMLER (MANUEL EKLENDİ)'])
+    sepRow.getCell(1).font      = { bold: true, size: 10, color: { argb: 'FF92400E' } }
+    sepRow.getCell(1).fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }
+    sepRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' }
+    ws.mergeCells(`A${sepRow.number}:J${sepRow.number}`)
+    sepRow.height = 18
+
+    manualRows.forEach((row, i) => {
+      const miktar = parseFloat(row.miktar) || 0
+      const wsRow  = ws.addRow({
+        siraNo: i + 1, kod: row.kod, ad: row.ad, adres: row.adres,
+        parti: row.parti, sayim: 0, sayilan: miktar, fark: miktar,
+        birim: row.birim, not: row.not,
+      })
+      wsRow.eachCell(cell => {
+        cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 === 1 ? 'FFFFF8E8' : 'FFFFFDF5' } }
+        cell.alignment = { vertical: 'middle' }
+      })
+      wsRow.getCell('fark').font = { bold: true, color: { argb: 'FF166534' } }
+    })
+  }
+
+  ws.views = [{ state: 'frozen', ySplit: 1 }]
+
+  const tarih = session?.tarih ? new Date(session.tarih).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url    = URL.createObjectURL(blob)
+  const a      = document.createElement('a')
+  a.href       = url
+  a.download   = `${firma.ad ? firma.ad + '_' : ''}Mutabakat_Raporu_${tarih}.xlsx`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+export async function exportRedbullResults(rows, results, session, firma = {}) {
+  const { default: ExcelJS } = await import('exceljs')
+
+  const workbook = new ExcelJS.Workbook()
+  workbook.creator = 'Sayım Planı'
+  workbook.created = new Date()
+
+  const ws = workbook.addWorksheet('Sayım Sonuçları')
+
+  ws.columns = [
+    { header: 'Sıra No.',     key: 'siraNo',  width: 8  },
+    { header: 'Adres',        key: 'adres',   width: 16 },
+    { header: 'Stok Kodu',    key: 'kod',     width: 16 },
+    { header: 'Stok Adı',     key: 'ad',      width: 35 },
+    { header: 'Lot',          key: 'parti',   width: 16 },
+    { header: 'Alisan Statu', key: 'durum',   width: 20 },
+    { header: 'Sistem',       key: 'sayim',   width: 14 },
+    { header: 'Sayılan',      key: 'sayilan', width: 12 },
+    { header: 'Fark',         key: 'fark',    width: 10 },
+    { header: 'Birim',        key: 'birim',   width: 8  },
+    { header: 'Onay Durumu',  key: 'status',  width: 12 },
+    { header: 'Not',          key: 'notlar',  width: 25 },
+  ]
+
+  ws.getRow(1).eachCell(cell => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1C1E' } }
+    cell.font = { color: { argb: 'FFFFFFFF' }, bold: true, size: 10 }
+    cell.alignment = { vertical: 'middle', horizontal: 'center' }
+  })
+  ws.getRow(1).height = 18
+
+  rows.forEach((row, i) => {
+    const res    = results[row.id] || {}
+    const sayilan = res.miktar !== undefined && res.miktar !== '' ? Number(res.miktar) : null
+    const sistem  = row.sayim !== '' ? Number(String(row.sayim).replace(',', '.')) : null
+    const fark    = sayilan !== null && sistem !== null ? sayilan - sistem : null
+
+    const wsRow = ws.addRow({
+      siraNo: row.siraNo, adres: row.adres, kod: row.kod, ad: row.ad,
+      parti: row.parti, durum: row.durum,
+      sayim: sistem, sayilan, fark, birim: row.birim,
+      status: res.status || '', notlar: res.notlar || '',
+    })
+
+    const rowNum = wsRow.number
+    if (fark !== null && fark !== 0) {
+      ws.getRow(rowNum).eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF3CD' } }
+      })
+    } else if (res.status === 'Onaylandı') {
+      ws.getRow(rowNum).eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD4EDDA' } }
+      })
+    } else if (i % 2 === 1) {
+      ws.getRow(rowNum).eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } }
+      })
+    }
+  })
+
+  ws.views = [{ state: 'frozen', ySplit: 1 }]
+
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url    = URL.createObjectURL(blob)
+  const a      = document.createElement('a')
+  a.href       = url
+  a.download   = `${firma.ad ? firma.ad + '_' : ''}Redbull_Sayim_Sonuclari_${new Date().toISOString().slice(0, 10)}.xlsx`
+  a.click()
+  URL.revokeObjectURL(url)
+}

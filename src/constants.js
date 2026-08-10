@@ -4,4 +4,5 @@
 export const SABLON = {
   STANDART: 'standart',
   WMS31: 'wms31',
+  WMS_REDBULL: 'wms_redbull',
 }

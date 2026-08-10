@@ -38,16 +38,17 @@ export default function ExcelYukle({ onNavigate }) {
     e.target.value = ''
   }
 
-  const formatLabel = importFormat === 'rapor5' ? 'RAPOR5' : importFormat === 'sku' ? 'SKU Listesi' : importFormat === 'wms31' ? 'WMS_Rapor_31' : '—'
+  const formatLabel = importFormat === 'rapor5' ? 'RAPOR5' : importFormat === 'sku' ? 'SKU Listesi' : importFormat === 'wms31' ? 'WMS_Rapor_31' : importFormat === 'redbull' ? 'WMS Depo Redbull' : '—'
   // Hangi formatın beklendiği firmanın şablonundan belirlenir — importFormat
   // sadece dosya yüklendikten SONRA dolar, yükleme öncesi ekranda (başlık,
   // desteklenen sütunlar kartı) bu yüzden importFormat değil firmaProfile.sablon
   // esas alınmalı, aksi halde her firma yükleme öncesi "RAPOR5 Yükle" görür.
-  const isWms31 = firmaProfile?.sablon === SABLON.WMS31
+  const isWms31   = firmaProfile?.sablon === SABLON.WMS31
+  const isRedbull = firmaProfile?.sablon === SABLON.WMS_REDBULL
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-slate-800 mb-1">{isWms31 ? 'WMS_Rapor_31 Yükle' : 'RAPOR5 Yükle'}</h1>
+      <h1 className="text-2xl font-bold text-slate-800 mb-1">{isWms31 ? 'WMS_Rapor_31 Yükle' : isRedbull ? 'WMS Depo Redbull Yükle' : 'RAPOR5 Yükle'}</h1>
       <p className="text-sm text-slate-500 mb-6">Her sayım için bir kez RAPOR5 veya WMS_Rapor_31 yükleyin. Değiştirmek için Panel sayfasını kullanın.</p>
 
       {/* Drop zone */}
@@ -84,7 +85,7 @@ export default function ExcelYukle({ onNavigate }) {
             <div className="text-sm text-slate-500">
               Format: <span className="font-semibold text-slate-700">{formatLabel}</span>
             </div>
-            <div className="mt-4 text-xs text-slate-400">Değiştirmek için Panel → {isWms31 ? 'WMS_Rapor_31 Yönetimi' : 'RAPOR5 Yönetimi'} bölümünü kullanın</div>
+            <div className="mt-4 text-xs text-slate-400">Değiştirmek için Panel → {isWms31 ? 'WMS_Rapor_31 Yönetimi' : isRedbull ? 'WMS Depo Redbull Yönetimi' : 'RAPOR5 Yönetimi'} bölümünü kullanın</div>
           </>
         ) : (
           <>
@@ -106,13 +107,15 @@ export default function ExcelYukle({ onNavigate }) {
             <span className="ms text-emerald-600" style={{ fontSize: 18 }}>table_view</span>
           </div>
           <div>
-            <div className="font-semibold text-slate-800 text-[13.5px]">{isWms31 ? 'WMS_Rapor_31 Desteklenen Sütunlar' : 'RAPOR5 Desteklenen Sütunlar'}</div>
-            <div className="text-[11.5px] text-slate-400 mono">{isWms31 ? 'WMS dışa aktarım formatı (WMS Antrepo Sayım) · .xlsx' : 'SAP dışa aktarım formatı · .xls ve .xlsx'}</div>
+            <div className="font-semibold text-slate-800 text-[13.5px]">{isWms31 ? 'WMS_Rapor_31 Desteklenen Sütunlar' : isRedbull ? 'WMS Depo Redbull Desteklenen Sütunlar' : 'RAPOR5 Desteklenen Sütunlar'}</div>
+            <div className="text-[11.5px] text-slate-400 mono">{isWms31 ? 'WMS dışa aktarım formatı (WMS Antrepo Sayım) · .xlsx' : isRedbull ? 'Redbull WMS "Sayıma gelecek Rapor" formatı · .xlsx' : 'SAP dışa aktarım formatı · .xls ve .xlsx'}</div>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-1">
           {(isWms31
             ? ['Adres', 'Stok Kodu', 'Stok Adı', 'Beyanname', 'Durum Adı', 'Kategori', 'Palet Barkodu', 'Palet Adeti', 'Toplam Stok', 'Rezerve Adet', 'Depo Kalan Stok', 'Birim Adı']
+            : isRedbull
+            ? ['Address', 'Material', 'Material Name', 'Lot', 'Alisan Statu', 'Adet', 'Birim', 'Açıklama']
             : ['Adres', 'Kod', 'Ad', 'Parti', 'Durum', 'Palet Adet', 'Birim 1', 'Son Kırılım Miktar', 'Son Kırılım Birim', 'Barkod']
           ).map(col => (
             <div key={col} className="flex items-center gap-1.5 text-[12.5px] text-slate-600">
@@ -130,14 +133,14 @@ export default function ExcelYukle({ onNavigate }) {
       {locked && (
         <div className="flex gap-3 mt-6">
           <button
-            onClick={() => onNavigate(isWms31 ? 'antreposayim' : 'sayim')}
+            onClick={() => onNavigate(isWms31 ? 'antreposayim' : isRedbull ? 'redbullsayim' : 'sayim')}
             className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors"
           >
             <span className="ms">fact_check</span>
             Stok Sayımına Geç
           </button>
           <button
-            onClick={() => onNavigate(isWms31 ? 'antrepopanel' : 'panel')}
+            onClick={() => onNavigate(isWms31 ? 'antrepopanel' : isRedbull ? 'redbullpanel' : 'panel')}
             className="px-4 py-3 border border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl text-sm font-medium transition-colors"
           >
             Panele Git
