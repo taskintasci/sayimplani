@@ -6,12 +6,7 @@ import { exportRedbullResults } from '../../utils/excelExport'
 import RedbullPrintSheet from '../print/RedbullPrintSheet'
 import MultiSelect from '../shared/MultiSelect'
 import GorevAtaModal from './GorevAtaModal'
-
-function RedbullDurumBadge({ durum }) {
-  if (!durum) return <span className="badge badge-normal">—</span>
-  if (durum === 'Normal') return <span className="badge badge-normal">{durum}</span>
-  return <span className="badge badge-bloke">{durum}</span>
-}
+import RedbullDurumBadge from '../shared/RedbullDurumBadge'
 
 export default function RedbullSayim({ onNavigate }) {
   const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, pendingKodFilter, clearPendingKodFilter, rowsLoading, firmaProfile, sortType, setSortType } = useStore()
@@ -211,7 +206,7 @@ export default function RedbullSayim({ onNavigate }) {
           <table className="w-full text-left border-collapse" style={{ minWidth: 1200 }}>
             <thead className="sticky top-0 z-10">
               <tr className="bg-slate-800">
-                {[8, 96, 112, 200, 100, 90, 90, 60, 120].map((w, i) => (
+                {[8, 96, 112, 200, 140, 80, 90, 60, 80, 90, 60, 120].map((w, i) => (
                   <th key={i} className="px-3 py-2.5">
                     <span className="skeleton h-3 inline-block" style={{ width: w * 0.5 + 'px', opacity: 0.3 }} />
                   </th>
@@ -221,7 +216,7 @@ export default function RedbullSayim({ onNavigate }) {
             <tbody>
               {Array.from({ length: 18 }).map((_, i) => (
                 <tr key={i} className="border-b border-slate-100" style={i % 2 === 1 ? { background: '#f8fafc' } : {}}>
-                  {[8, 96, 112, 200, 100, 90, 90, 60, 120].map((w, j) => (
+                  {[8, 96, 112, 200, 140, 80, 90, 60, 80, 90, 60, 120].map((w, j) => (
                     <td key={j} className="px-3 py-2.5">
                       <span className="skeleton h-3 inline-block" style={{ width: (w * (0.4 + Math.random() * 0.4)) + 'px' }} />
                     </td>

@@ -22,6 +22,18 @@ function toNumWms31(val) {
   return str.replace(/,/g, '')
 }
 
+// WMS Depo Redbull'daki "Palet" sütunu düz sayı ama SheetJS ondalıklı
+// biçimlendiriyor (örn. " 1.0 "). toNumWms31 sadece binlik virgülü temizler,
+// gereksiz ".0" kalır — burada tam sayıya yuvarlanmadan (ör. "1.5" bozulmadan)
+// gereksiz ondalık sıfırlar ayıklanıyor.
+function toNumClean(val) {
+  if (val === undefined || val === null || val === '') return ''
+  const str = String(val).trim()
+  if (str === '' || str === '-') return '0'
+  const num = Number(str.replace(',', '.'))
+  return Number.isFinite(num) ? String(num) : str
+}
+
 // ─── SKU_Sayım_Listesi sütun haritası ───────────────────────────────────────
 const SKU_MAP = {
   'sira no.'  : 'siraNo',
@@ -168,7 +180,7 @@ function mapDataRow(rowArr, colMap, siraNo, format) {
     } else if (field === 'birim_yedek') {
       if (!mapped.birim) mapped.birim = String(val)
     } else if (field === 'paletAdeti' || field === 'rezerveAdet') {
-      mapped[field] = toNumWms31(val)
+      mapped[field] = isW31 ? toNumWms31(val) : toNumClean(val)
     } else if (field === 'sayim' || field === 'adet1') {
       mapped[field] = isW31 ? toNumWms31(val) : toNum(val)
     } else if (field === 'siraNo') {

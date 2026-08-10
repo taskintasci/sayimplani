@@ -611,13 +611,7 @@ export async function exportRedbullRaporFarklar(discrepancies, session, manualRo
 
   const tarih = session?.tarih ? new Date(session.tarih).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)
   const buffer = await workbook.xlsx.writeBuffer()
-  const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-  const url    = URL.createObjectURL(blob)
-  const a      = document.createElement('a')
-  a.href       = url
-  a.download   = `${firma.ad ? firma.ad + '_' : ''}Mutabakat_Raporu_${tarih}.xlsx`
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadWorkbook(buffer, `${firma.ad ? firma.ad + '_' : ''}Mutabakat_Raporu_${tarih}.xlsx`)
 }
 
 export async function exportRedbullResults(rows, results, session, firma = {}) {
@@ -685,11 +679,5 @@ export async function exportRedbullResults(rows, results, session, firma = {}) {
   ws.views = [{ state: 'frozen', ySplit: 1 }]
 
   const buffer = await workbook.xlsx.writeBuffer()
-  const blob   = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-  const url    = URL.createObjectURL(blob)
-  const a      = document.createElement('a')
-  a.href       = url
-  a.download   = `${firma.ad ? firma.ad + '_' : ''}Redbull_Sayim_Sonuclari_${new Date().toISOString().slice(0, 10)}.xlsx`
-  a.click()
-  URL.revokeObjectURL(url)
+  downloadWorkbook(buffer, `${firma.ad ? firma.ad + '_' : ''}Redbull_Sayim_Sonuclari_${new Date().toISOString().slice(0, 10)}.xlsx`)
 }

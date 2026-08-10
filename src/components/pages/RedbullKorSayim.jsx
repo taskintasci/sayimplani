@@ -6,12 +6,7 @@ import { exportRedbullResults } from '../../utils/excelExport'
 import RedbullPrintSheet from '../print/RedbullPrintSheet'
 import MultiSelect from '../shared/MultiSelect'
 import GorevAtaModal from './GorevAtaModal'
-
-function RedbullDurumBadge({ durum }) {
-  if (!durum) return <span className="badge badge-normal">—</span>
-  if (durum === 'Normal') return <span className="badge badge-normal">{durum}</span>
-  return <span className="badge badge-bloke">{durum}</span>
-}
+import RedbullDurumBadge from '../shared/RedbullDurumBadge'
 
 export default function RedbullKorSayim({ onNavigate }) {
   const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, korCodes, korMatched, addKorCodes, removeKorCode, clearKor, pendingKodFilter, clearPendingKodFilter, firmaProfile, sortType, setSortType } = useStore()
@@ -19,7 +14,10 @@ export default function RedbullKorSayim({ onNavigate }) {
   const locked = session.durum === 'Tamamlandı'
 
   const [codeInput, setCodeInput]     = useState('')
-  const [hideSistem, setHideSistem]   = useState(false)
+  // Kör sayım (blind count) olduğu için Sistem miktarı varsayılan olarak
+  // gizli açılıyor — hem ekranda hem yazdırma çıktısında; yönetici denetim
+  // amacıyla "Sistemi Göster" ile isteğe bağlı açabiliyor.
+  const [hideSistem, setHideSistem]   = useState(true)
   const [hideSayilan, setHideSayilan] = useState(false)
   const [filterSearch, setFilterSearch] = useState('')
   const [filterDurum, setFilterDurum] = useState([])
@@ -34,6 +32,12 @@ export default function RedbullKorSayim({ onNavigate }) {
   const [gorevModal, setGorevModal]   = useState(false)
 
   const handlePrint = useReactToPrint({ contentRef: printRef })
+
+  // hideSistem varsayılanı true olduğu için ilk render'da body sınıfını da
+  // eşitliyoruz — aksi halde buton "Sistemi Göster" derken tablo hâlâ görünür kalır.
+  useEffect(() => {
+    document.body.classList.toggle('hide-sistem', hideSistem)
+  }, [])
 
   useEffect(() => {
     if (pendingKodFilter) {

@@ -3,12 +3,7 @@ import useStore from '../../store/useStore'
 import { exportRedbullRaporFarklar } from '../../utils/excelExport'
 import { useShallow } from 'zustand/react/shallow'
 import ComboBox from '../shared/ComboBox'
-
-function RedbullDurumBadge({ durum }) {
-  if (!durum) return <span className="badge badge-normal">—</span>
-  if (durum === 'Normal') return <span className="badge badge-normal">{durum}</span>
-  return <span className="badge badge-bloke">{durum}</span>
-}
+import RedbullDurumBadge from '../shared/RedbullDurumBadge'
 
 const EMPTY_FORM = { kod: '', ad: '', adres: '', parti: '', miktar: '', birim: '', not: '' }
 
@@ -234,7 +229,7 @@ export default function RedbullRapor({ onNavigate }) {
                     <td className="px-3 py-1.5 mono text-slate-400 text-[10.5px]">{row.sscc || '—'}</td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.parti || '—'}</td>
                     <td className="px-3 py-1.5"><RedbullDurumBadge durum={row.durum} /></td>
-                    <td className="px-3 py-1.5 text-right mono text-slate-500 text-[12px]">{row.paletAdeti || '—'}</td>
+                    <td className="px-3 py-1.5 text-right mono text-slate-500 text-[12px]">{row.paletAdeti != null && row.paletAdeti !== '' ? row.paletAdeti : '—'}</td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.adres}</td>
                     <td className="px-3 py-1.5 text-right mono font-medium">
                       {row.sayim} <span className="text-slate-400 text-[11px]">{row.birim}</span>

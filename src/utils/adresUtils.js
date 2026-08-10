@@ -180,25 +180,6 @@ export function sortRowsRedbull(rows, sortType) {
   })
 }
 
-export function getUniqueAdresValuesRedbull(rows) {
-  const binaSet = new Set(), koridorSet = new Set(), sutunSet = new Set(), siraSet = new Set(), katSet = new Set()
-  rows.forEach(r => {
-    const p = parseAdresRedbull(r.adres)
-    if (p.bina) binaSet.add(p.bina)
-    if (p.koridor) koridorSet.add(p.koridor)
-    if (p.sutun) sutunSet.add(p.sutun)
-    if (p.sira) siraSet.add(p.sira)
-    if (p.kat) katSet.add(p.kat)
-  })
-  return {
-    binalar:    [...binaSet].sort(numCmp),
-    koridorlar: [...koridorSet].sort(numCmp),
-    sutunlar:   [...sutunSet].sort(numCmp),
-    siralar:    [...siraSet].sort(numCmp),
-    katlar:     [...katSet].sort(numCmp),
-  }
-}
-
 /**
  * computeFilterOptions'ın Redbull eşdeğeri (simetrik cascade filtre).
  * Kategori/Ürün Tipi/Palet/Giriş Günü boyutları yok — Redbull excel'inde
