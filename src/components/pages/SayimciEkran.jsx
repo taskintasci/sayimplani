@@ -746,7 +746,7 @@ export default function SayimciEkran({ mode = 'self' }) {
         </div>
 
         {!locked && manuelOpen && (
-          <ManuelModal onClose={() => setManuelOpen(false)} addManualRow={manuelAddFn} manualRows={manuelRows} isKor={isKor} isRedbull={isRedbull} skuMasterdata={skuMasterdata} lokasyonlar={lokasyonlar} />
+          <ManuelModal onClose={() => setManuelOpen(false)} addManualRow={manuelAddFn} manualRows={manuelRows} isKor={isKor} isRedbull={isRedbull} skuMasterdata={skuMasterdata} lokasyonlar={lokasyonlar} rows={atanan} />
         )}
       </div>
     )
@@ -848,6 +848,7 @@ export default function SayimciEkran({ mode = 'self' }) {
             isRedbull={isRedbull}
             skuMasterdata={skuMasterdata}
             lokasyonlar={lokasyonlar}
+            rows={atanan}
           />
         )}
         <UndoToast item={lastConfirmed} onUndo={geriAl} />
@@ -985,9 +986,9 @@ function DurumRozet({ durum }) {
   return <span className={'px-2 py-0.5 rounded-full text-xs font-medium ' + d.cls}>{d.label}</span>
 }
 
-const MANUEL_BOS = { kod: '', ad: '', adres: '', parti: '', durum: '', miktar: '', birim: '', not: '' }
+const MANUEL_BOS = { kod: '', ad: '', adres: '', parti: '', sscc: '', durum: '', miktar: '', birim: '', not: '' }
 
-function ManuelModal({ onClose, addManualRow, manualRows, isKor, isRedbull, skuMasterdata, lokasyonlar }) {
+function ManuelModal({ onClose, addManualRow, manualRows, isKor, isRedbull, skuMasterdata, lokasyonlar, rows }) {
   const [form, setForm] = useState(MANUEL_BOS)
 
   // Arka plan sayfası kaydırılabilir kaldıkça mobilde bir input'a dokununca
@@ -1014,6 +1015,12 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isRedbull, skuM
     [skuMasterdata]
   )
   const lokasyonOptions = useMemo(() => lokasyonlar.map(l => ({ value: l, label: l })), [lokasyonlar])
+  // Redbull'da mevcut SSCC'lerden yazdıkça öneri — serbest metin, raporda
+  // olmayan bir SSCC de girilebilir.
+  const ssccOptions = useMemo(
+    () => isRedbull ? [...new Set((rows || []).map(r => r.sscc).filter(Boolean))].map(s => ({ value: s, label: s })) : [],
+    [rows, isRedbull]
+  )
 
   const matchedSku = useMemo(
     () => skuMasterdata.find(s => s.kod.toUpperCase() === form.kod.trim().toUpperCase()),
@@ -1026,7 +1033,7 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isRedbull, skuM
   // olasılığına karşı onay iste — yazım sırasında yanlışlıkla dokunma kayıp
   // vermesin diye.
   const isDirty = form.kod.trim() !== '' || form.adres.trim() !== '' || form.miktar !== '' ||
-    form.parti.trim() !== '' || form.durum.trim() !== '' || form.not.trim() !== ''
+    form.parti.trim() !== '' || form.sscc.trim() !== '' || form.durum.trim() !== '' || form.not.trim() !== ''
   function handleClose() {
     if (isDirty && !window.confirm('Girdiğiniz bilgiler kaybolacak. Kapatmak istediğinize emin misiniz?')) return
     onClose()
@@ -1045,6 +1052,7 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isRedbull, skuM
       ad:     matchedSku.ad,
       adres:  form.adres.trim(),
       parti:  form.parti.trim(),
+      sscc:   form.sscc.trim(),
       durum:  form.durum.trim(),
       miktar: Number(form.miktar),
       birim:  matchedSku.birim,
@@ -1104,6 +1112,18 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isRedbull, skuM
               invalid={form.adres.trim() !== '' && !adresGecerli}
             />
           </div>
+          {isRedbull && (
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">SSCC</label>
+              <ComboBox
+                value={form.sscc}
+                onChange={text => setForm(f => ({ ...f, sscc: text }))}
+                onSelect={opt => setForm(f => ({ ...f, sscc: opt.value }))}
+                options={ssccOptions}
+                placeholder="Raporda yoksa da girilebilir"
+              />
+            </div>
+          )}
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-xs font-medium text-slate-500 mb-1">{isRedbull ? 'Lot' : 'Parti'}</label>

@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow'
 import ComboBox from '../shared/ComboBox'
 import RedbullDurumBadge from '../shared/RedbullDurumBadge'
 
-const EMPTY_FORM = { kod: '', ad: '', adres: '', parti: '', miktar: '', birim: '', not: '' }
+const EMPTY_FORM = { kod: '', ad: '', adres: '', parti: '', sscc: '', miktar: '', birim: '', not: '' }
 
 export default function RedbullRapor({ onNavigate }) {
   const { rows, results, session, setPendingKodFilter, approveSession, manualRows, addManualRow, removeManualRow, korManualRows, removeKorManualRow, resultsLoading, userRole, firmaProfile, skuMasterdata, lokasyonlar } = useStore(
@@ -41,6 +41,13 @@ export default function RedbullRapor({ onNavigate }) {
     [skuMasterdata]
   )
   const lokasyonOptions = useMemo(() => lokasyonlar.map(l => ({ value: l, label: l })), [lokasyonlar])
+  // Rapordaki mevcut SSCC'lerden yazdıkça öneri — serbest metin, listede
+  // olmayan bir SSCC de girilebilir (ilk 7-8 hane genelde aynı olduğundan
+  // öneri yazarken yön gösterici olması yeterli, doğrulama zorunlu değil).
+  const ssccOptions = useMemo(
+    () => [...new Set(rows.map(r => r.sscc).filter(Boolean))].map(s => ({ value: s, label: s })),
+    [rows]
+  )
   const matchedSku = useMemo(
     () => skuMasterdata.find(s => s.kod.toUpperCase() === form.kod.trim().toUpperCase()),
     [skuMasterdata, form.kod]
@@ -88,6 +95,7 @@ export default function RedbullRapor({ onNavigate }) {
       ad:     matchedSku.ad,
       adres:  form.adres.trim(),
       parti:  form.parti.trim(),
+      sscc:   form.sscc.trim(),
       durum:  '',
       miktar: form.miktar,
       birim:  matchedSku.birim,
@@ -286,7 +294,7 @@ export default function RedbullRapor({ onNavigate }) {
         {/* Ekleme Formu */}
         {showForm && (
           <form onSubmit={handleAddManual} className="px-4 py-3 border-b border-amber-100 bg-amber-50/40 no-print flex flex-col gap-2">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
               <div>
                 <label className="block text-[11px] text-slate-500 mb-1">Stok Kodu *</label>
                 <ComboBox
@@ -328,6 +336,16 @@ export default function RedbullRapor({ onNavigate }) {
                   onChange={e => setForm(f => ({ ...f, parti: e.target.value }))}
                   placeholder="2541388"
                   className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-500 mb-1">SSCC</label>
+                <ComboBox
+                  value={form.sscc}
+                  onChange={text => setForm(f => ({ ...f, sscc: text }))}
+                  onSelect={opt => setForm(f => ({ ...f, sscc: opt.value }))}
+                  options={ssccOptions}
+                  placeholder="Raporda yoksa da girilebilir"
                 />
               </div>
             </div>
