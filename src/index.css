@@ -64,6 +64,16 @@ body { -webkit-tap-highlight-color: transparent; }
   border-radius: 4px;
 }
 
+/* ── Toast (sayfa altı kısa bildirim) ────────────────────────────────────── */
+@keyframes toast-pop {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.toast-pop { animation: toast-pop 180ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .toast-pop { animation: none; }
+}
+
 /* ── Focus ring — klavye erişilebilirliği ────────────────────────────────── */
 :focus-visible {
   outline: 2px solid #2563eb !important;

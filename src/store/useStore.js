@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import {
   collection, collectionGroup, doc, addDoc, getDoc, getDocs, updateDoc, setDoc, deleteDoc,
   onSnapshot, orderBy, query, where, serverTimestamp, writeBatch, limit,
+  arrayUnion, arrayRemove,
 } from 'firebase/firestore'
 import {
   createUserWithEmailAndPassword, signOut as secondarySignOut,
@@ -21,8 +22,27 @@ const devErr = (msg, err) => { if (import.meta.env.DEV) console.error(msg, err) 
 // ─── Debounce map: keystroke → Firestore write ────────────────────────────
 const writeTimers = new Map()
 
-// ─── Real-time results unsubscribe handle ─────────────────────────────────
+// ─── Real-time unsubscribe handle'ları ────────────────────────────────────
+// results: sessions/{id}/results alt koleksiyonu (sayım miktarları)
+// sessionDoc: sessions/{id} dokümanının KENDİSİ — manuel kalemler
+// (manualRows/korManualRows), kör sayım kod listesi ve durum burada tutuluyor;
+// dinlenmediği sürece başka bir cihazın/tarayıcının eklediği manuel satır
+// mevcut sekmede hiç görünmüyordu (sadece setActiveSession anında okunuyordu).
 let resultsUnsub = null
+let sessionUnsub = null
+const stopSessionListeners = () => {
+  if (resultsUnsub) { resultsUnsub(); resultsUnsub = null }
+  if (sessionUnsub) { sessionUnsub(); sessionUnsub = null }
+}
+
+// Manuel satır id'si: aynı milisaniyede iki cihazdan eklenen satırların
+// çakışmaması için zaman damgasına rastgele son ek — id çakışması silmede
+// yanlış satırın uçmasına yol açardı.
+const manualId = (prefix) =>
+  `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+
+// ─── Toast (sayfa altındaki kısa bildirim) zamanlayıcısı ──────────────────
+let toastTimer = null
 
 const useStore = create((set, get) => ({
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -81,7 +101,7 @@ const useStore = create((set, get) => ({
   // effectiveFirma hesaplaması).
   loadUserProfile: async (user) => {
     if (!user) {
-      if (resultsUnsub) { resultsUnsub(); resultsUnsub = null }
+      stopSessionListeners()
       set({
         currentUser: null, userProfile: null, userRole: null, profileLoading: false, authError: null,
         firmaProfile: null, activeFirma: null,
@@ -164,7 +184,7 @@ const useStore = create((set, get) => ({
   // firmanın aktif oturum/satır/sonuç verisi tamamen temizlenir (aksi halde
   // "Aktif Sayım" kartında bir önceki firmanın son oturumu görünmeye devam eder).
   setActiveFirma: async (firmaId) => {
-    if (resultsUnsub) { resultsUnsub(); resultsUnsub = null }
+    stopSessionListeners()
     const firmaDoc = get().firmalar.find(f => f.id === firmaId)
     set({
       activeFirma: firmaId, firmaProfile: firmaDoc || null,
@@ -422,6 +442,25 @@ const useStore = create((set, get) => ({
   setPendingKodFilter: (kod) => set({ pendingKodFilter: kod }),
   clearPendingKodFilter: () => set({ pendingKodFilter: null }),
 
+  // ── Toast bildirimi (sayfa altında, ~3 sn) ────────────────────────────────
+  // Kalıcı "Son İşlemler" logundan (addEvent) ayrıdır: bu sadece anlık bir
+  // geri bildirim (ör. manuel stok eklendi). Render'ı Toast.jsx yapıyor.
+  toast: null,                  // { id, text, tone: 'success' | 'error' }
+  showToast: (text, tone = 'success') => {
+    const id = Date.now() + Math.random()
+    set({ toast: { id, text, tone } })
+    if (toastTimer) clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => {
+      // Arada yeni bir toast geldiyse onu erken kapatma
+      set(state => (state.toast?.id === id ? { toast: null } : {}))
+      toastTimer = null
+    }, 3000)
+  },
+  hideToast: () => {
+    if (toastTimer) { clearTimeout(toastTimer); toastTimer = null }
+    set({ toast: null })
+  },
+
   // ── Son İşlemler event logu (in-memory) ───────────────────────────────────
   events: [],
   addEvent: (event) => set(state => ({
@@ -433,7 +472,7 @@ const useStore = create((set, get) => ({
   // =========================================================================
 
   setActiveSession: async (id) => {
-    if (resultsUnsub) { resultsUnsub(); resultsUnsub = null }
+    stopSessionListeners()
 
     if (!id) {
       set({ activeSessionId: null, rows: [], results: {}, korCodes: [], korMatched: [], manualRows: [], korManualRows: [], rowsLoading: false, resultsLoading: false, session: null })
@@ -514,6 +553,42 @@ const useStore = create((set, get) => ({
         devErr('Results listener hatası:', err)
         set({ resultsLoading: false })
       }
+    )
+
+    // Real-time session dokümanı listener'ı — manuel kalemler
+    // (manualRows/korManualRows), kör sayım kod listesi, oturum durumu ve
+    // sayım notu bu dokümanda tutuluyor. Önceden SADECE oturum açılırken bir
+    // kez okunuyordu: başka bir cihazda/tarayıcıda (ör. sayımcının telefonu)
+    // eklenen manuel satır, sayfa yeniden yüklenmedikçe rapor ekranında hiç
+    // görünmüyordu. Snapshot yerel (henüz sunucuya gitmemiş) yazmaları da
+    // anında yansıttığı için kendi eklediğin satır da kaybolmaz.
+    sessionUnsub = onSnapshot(
+      doc(db, 'sessions', id),
+      (snap) => {
+        if (!snap.exists()) return
+        const d = snap.data()
+        set(state => {
+          const korCodes = d.korCodes || []
+          const next = {
+            manualRows:    d.manualRows    || [],
+            korManualRows: d.korManualRows || [],
+            korCodes,
+            korMatched:    korCodes.length > 0 ? state.rows.filter(r => korCodes.includes(r.kod)) : [],
+            session: state.session ? {
+              ...state.session,
+              durum: d.durum || state.session.durum,
+              // Not alanı debounce ile yazılıyor; kullanıcı yazmaya devam
+              // ederken gelen snapshot yazdıklarını geri almasın diye
+              // bekleyen bir yazma varsa yerel değer korunur.
+              sayimNotu: writeTimers.has('sessionNote_' + id)
+                ? state.session.sayimNotu
+                : (d.sayimNotu || ''),
+            } : state.session,
+          }
+          return next
+        })
+      },
+      (err) => devErr('Session listener hatası:', err)
     )
   },
 
@@ -697,13 +772,19 @@ const useStore = create((set, get) => ({
       return { results: next }
     }),
 
+  // korCodes de manuel satırlarla aynı "tüm diziyi yaz" desenindeydi; iki
+  // cihaz aynı anda kod eklerse biri diğerini eziyordu. Atomik arrayUnion/
+  // arrayRemove ile birleştiriliyor (clearKor bilinçli temizleme olduğu için
+  // dizinin tamamını yazmaya devam ediyor).
   addKorCodes: (newCodes) => {
     const state   = get()
-    const merged  = [...new Set([...state.korCodes, ...newCodes.map(c => c.trim()).filter(Boolean)])]
+    const temiz   = newCodes.map(c => c.trim()).filter(Boolean)
+    const merged  = [...new Set([...state.korCodes, ...temiz])]
     const matched = state.rows.filter(r => merged.includes(r.kod))
     set({ korCodes: merged, korMatched: matched })
-    if (state.activeSessionId)
-      updateDoc(doc(db, 'sessions', state.activeSessionId), { korCodes: merged }).catch(e => devErr('korCodes güncelleme hatası:', e))
+    if (state.activeSessionId && temiz.length > 0)
+      updateDoc(doc(db, 'sessions', state.activeSessionId), { korCodes: arrayUnion(...temiz) })
+        .catch(e => devErr('korCodes güncelleme hatası:', e))
   },
   removeKorCode: (code) => {
     const state   = get()
@@ -711,7 +792,8 @@ const useStore = create((set, get) => ({
     const matched = state.rows.filter(r => updated.includes(r.kod))
     set({ korCodes: updated, korMatched: matched })
     if (state.activeSessionId)
-      updateDoc(doc(db, 'sessions', state.activeSessionId), { korCodes: updated }).catch(e => devErr('korCodes güncelleme hatası:', e))
+      updateDoc(doc(db, 'sessions', state.activeSessionId), { korCodes: arrayRemove(code) })
+        .catch(e => devErr('korCodes güncelleme hatası:', e))
   },
   setKorMatched: (rows) => set({ korMatched: rows }),
   clearKor: () => {
@@ -792,53 +874,81 @@ const useStore = create((set, get) => ({
   // `updateResult`/`updateSessionNote` zaten aynı arkaplan-yazma desenini
   // kullanıyor; veri kaybı riski yok, Firestore'un offline kuyruğu (
   // persistentLocalCache) bağlantı geri gelince senkronu garanti ediyor.
+  //
+  // ÖNEMLİ (2026-08-11 düzeltmesi): bu 4 aksiyon eskiden dizinin TAMAMINI
+  // (`manualRows: updated`) yazıyordu. İki cihaz/sekme aynı oturumda manuel
+  // kalem eklediğinde son yazan, diğerinin satırlarını sessizce siliyordu —
+  // rapor ekranındaki "eksik satır" şikayetinin kök nedeni buydu. Artık
+  // atomik `arrayUnion`/`arrayRemove` kullanılıyor: sunucu tarafında
+  // birleştiği için eşzamanlı eklemeler birbirini ezmiyor.
+  // Ayrıca yazma reddedilirse (ör. yetki hatası) hata artık sessizce
+  // yutulmuyor — yerel satır geri alınıp kullanıcı uyarılıyor, aksi halde
+  // ekranda duran ama sunucuya hiç ulaşmamış "hayalet" satırlar oluşuyordu.
   addManualRow: (row) => {
     const { activeSessionId, manualRows } = get()
-    const newRow = { ...row, id: 'manual_' + Date.now() }
-    const updated = [...manualRows, newRow]
-    set({ manualRows: updated })
+    const newRow = { ...row, id: manualId('manual') }
+    set({ manualRows: [...manualRows, newRow] })
+    get().showToast(`Manuel stok eklendi: ${newRow.kod}`)
     if (activeSessionId) {
       updateDoc(doc(db, 'sessions', activeSessionId), {
-        manualRows: updated,
+        manualRows: arrayUnion(newRow),
         updatedAt: serverTimestamp(),
-      }).catch(err => devErr('Manuel satır kaydedilemedi:', err))
+      }).catch(err => {
+        devErr('Manuel satır kaydedilemedi:', err)
+        set(state => ({ manualRows: state.manualRows.filter(r => r.id !== newRow.id) }))
+        window.alert(`"${newRow.kod}" manuel kalemi kaydedilemedi, satır geri alındı. Lütfen tekrar deneyin.`)
+      })
     }
   },
 
   removeManualRow: (id) => {
     const { activeSessionId, manualRows } = get()
-    const updated = manualRows.filter(r => r.id !== id)
-    set({ manualRows: updated })
+    const target = manualRows.find(r => r.id === id)
+    if (!target) return
+    set({ manualRows: manualRows.filter(r => r.id !== id) })
     if (activeSessionId) {
       updateDoc(doc(db, 'sessions', activeSessionId), {
-        manualRows: updated,
+        manualRows: arrayRemove(target),
         updatedAt: serverTimestamp(),
-      }).catch(err => devErr('Manuel satır silinemedi:', err))
+      }).catch(err => {
+        devErr('Manuel satır silinemedi:', err)
+        set(state => ({ manualRows: [...state.manualRows, target] }))
+        window.alert(`"${target.kod}" manuel kalemi silinemedi. Lütfen tekrar deneyin.`)
+      })
     }
   },
 
   addKorManualRow: (row) => {
     const { activeSessionId, korManualRows } = get()
-    const newRow  = { ...row, id: 'kormanual_' + Date.now() }
-    const updated = [...korManualRows, newRow]
-    set({ korManualRows: updated })
+    const newRow = { ...row, id: manualId('kormanual') }
+    set({ korManualRows: [...korManualRows, newRow] })
+    get().showToast(`Manuel stok eklendi: ${newRow.kod}`)
     if (activeSessionId) {
       updateDoc(doc(db, 'sessions', activeSessionId), {
-        korManualRows: updated,
+        korManualRows: arrayUnion(newRow),
         updatedAt: serverTimestamp(),
-      }).catch(err => devErr('Kör manuel satır kaydedilemedi:', err))
+      }).catch(err => {
+        devErr('Kör manuel satır kaydedilemedi:', err)
+        set(state => ({ korManualRows: state.korManualRows.filter(r => r.id !== newRow.id) }))
+        window.alert(`"${newRow.kod}" manuel kalemi kaydedilemedi, satır geri alındı. Lütfen tekrar deneyin.`)
+      })
     }
   },
 
   removeKorManualRow: (id) => {
     const { activeSessionId, korManualRows } = get()
-    const updated = korManualRows.filter(r => r.id !== id)
-    set({ korManualRows: updated })
+    const target = korManualRows.find(r => r.id === id)
+    if (!target) return
+    set({ korManualRows: korManualRows.filter(r => r.id !== id) })
     if (activeSessionId) {
       updateDoc(doc(db, 'sessions', activeSessionId), {
-        korManualRows: updated,
+        korManualRows: arrayRemove(target),
         updatedAt: serverTimestamp(),
-      }).catch(err => devErr('Kör manuel satır silinemedi:', err))
+      }).catch(err => {
+        devErr('Kör manuel satır silinemedi:', err)
+        set(state => ({ korManualRows: [...state.korManualRows, target] }))
+        window.alert(`"${target.kod}" manuel kalemi silinemedi. Lütfen tekrar deneyin.`)
+      })
     }
   },
 
@@ -871,7 +981,7 @@ const useStore = create((set, get) => ({
   },
 
   reset: () => {
-    if (resultsUnsub) { resultsUnsub(); resultsUnsub = null }
+    stopSessionListeners()
     set({ rows: [], results: {}, korCodes: [], korMatched: [] })
   },
 }))
