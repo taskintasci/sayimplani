@@ -29,6 +29,11 @@ export default function AntrepoKorSayimRapor({ onNavigate }) {
     return korManualRows.some(r => r.kod?.toUpperCase() === kod?.toUpperCase())
   }
 
+  function handleRemoveManual(row) {
+    if (!window.confirm(`"${row.kod}" kalemini silmek istediğinize emin misiniz?`)) return
+    removeKorManualRow(row.id)
+  }
+
   const skuOptions = useMemo(
     () => skuMasterdata.map(s => ({ value: s.kod, label: s.ad ? `${s.kod} — ${s.ad}` : s.kod })),
     [skuMasterdata]
@@ -375,7 +380,7 @@ export default function AntrepoKorSayimRapor({ onNavigate }) {
                     <td className="px-3 py-1.5 text-center no-print">
                       {userRole !== 'kontrolcu' && !locked && (
                         <button
-                          onClick={() => removeKorManualRow(row.id)}
+                          onClick={() => handleRemoveManual(row)}
                           className="text-slate-400 hover:text-red-500 transition-colors"
                           title="Sil"
                         >

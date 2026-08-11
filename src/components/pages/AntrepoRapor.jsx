@@ -38,6 +38,12 @@ export default function AntrepoRapor({ onNavigate }) {
     return allManualRows.some(r => r.kod?.toUpperCase() === kod?.toUpperCase())
   }
 
+  function handleRemoveManual(row) {
+    if (!window.confirm(`"${row.kod}" kalemini silmek istediğinize emin misiniz?`)) return
+    if (row._kaya === 'kor') removeKorManualRow(row.id)
+    else removeManualRow(row.id)
+  }
+
   const [approving, setApproving] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -429,7 +435,7 @@ export default function AntrepoRapor({ onNavigate }) {
                     <td className="px-3 py-1.5 text-center no-print">
                       {userRole !== 'kontrolcu' && !locked && (
                         <button
-                          onClick={() => row._kaya === 'kor' ? removeKorManualRow(row.id) : removeManualRow(row.id)}
+                          onClick={() => handleRemoveManual(row)}
                           className="text-slate-400 hover:text-red-500 transition-colors"
                           title="Sil"
                         >
