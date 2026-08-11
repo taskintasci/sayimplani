@@ -4,7 +4,7 @@ import { exportRedbullRaporFarklar } from '../../utils/excelExport'
 import ComboBox from '../shared/ComboBox'
 import RedbullDurumBadge from '../shared/RedbullDurumBadge'
 
-const EMPTY_FORM = { kod: '', ad: '', adres: '', parti: '', sscc: '', miktar: '', birim: '', not: '' }
+const EMPTY_FORM = { kod: '', ad: '', adres: '', parti: '', sscc: '', durum: '', miktar: '', birim: '', not: '' }
 
 export default function RedbullKorSayimRapor({ onNavigate }) {
   const { korMatched, results, session, setPendingKodFilter, korManualRows, addKorManualRow, removeKorManualRow, firmaProfile, userRole, skuMasterdata, lokasyonlar } = useStore()
@@ -59,7 +59,7 @@ export default function RedbullKorSayimRapor({ onNavigate }) {
       adres:  form.adres.trim(),
       parti:  form.parti.trim(),
       sscc:   form.sscc.trim(),
-      durum:  '',
+      durum:  form.durum.trim(),
       miktar: form.miktar,
       birim:  matchedSku.birim,
       not:    form.not.trim(),
@@ -179,7 +179,7 @@ export default function RedbullKorSayimRapor({ onNavigate }) {
                   <th className="px-3 py-1.5">Stok Kodu / Adı</th>
                   <th className="px-3 py-1.5">SSCC</th>
                   <th className="px-3 py-1.5">Lot</th>
-                  <th className="px-3 py-1.5">Alisan Statu</th>
+                  <th className="px-3 py-1.5">Statu</th>
                   <th className="px-3 py-1.5 text-right">Palet Adeti</th>
                   <th className="px-3 py-1.5">Adres</th>
                   <th className="px-3 py-1.5 text-right">Sistem</th>
@@ -308,6 +308,16 @@ export default function RedbullKorSayimRapor({ onNavigate }) {
                   placeholder="Raporda yoksa da girilebilir"
                 />
               </div>
+              <div>
+                <label className="block text-[11px] text-slate-500 mb-1">Statu</label>
+                <input
+                  type="text"
+                  value={form.durum}
+                  onChange={e => setForm(f => ({ ...f, durum: e.target.value }))}
+                  placeholder="Normal / İade..."
+                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
               <div>
@@ -365,7 +375,9 @@ export default function RedbullKorSayimRapor({ onNavigate }) {
               <thead>
                 <tr className="bg-slate-50 text-[11px] mono text-slate-500 uppercase tracking-wider border-b border-slate-200">
                   <th className="px-3 py-1.5">Stok Kodu / Adı</th>
+                  <th className="px-3 py-1.5">SSCC</th>
                   <th className="px-3 py-1.5">Lot</th>
+                  <th className="px-3 py-1.5">Statu</th>
                   <th className="px-3 py-1.5">Adres</th>
                   <th className="px-3 py-1.5 text-right">Sistem</th>
                   <th className="px-3 py-1.5 text-right">Sayılan</th>
@@ -381,7 +393,9 @@ export default function RedbullKorSayimRapor({ onNavigate }) {
                       <p className="mono font-semibold text-amber-700 text-[11px]">{row.kod}</p>
                       <p className="text-slate-700">{row.ad || <span className="text-slate-400 italic">—</span>}</p>
                     </td>
+                    <td className="px-3 py-1.5 mono text-slate-400 text-[10.5px]">{row.sscc || '—'}</td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.parti || '—'}</td>
+                    <td className="px-3 py-1.5 text-slate-500 text-[12px]">{row.durum || '—'}</td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.adres || '—'}</td>
                     <td className="px-3 py-1.5 text-right mono text-slate-400">0</td>
                     <td className="px-3 py-1.5 text-right mono font-bold text-emerald-600">

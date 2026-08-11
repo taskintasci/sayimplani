@@ -248,7 +248,7 @@ export default function RedbullSayim({ onNavigate }) {
                 <th className="px-3 py-2.5">Stok Adı</th>
                 <th className="px-3 py-2.5 w-40">SSCC</th>
                 <th className="px-3 py-2.5 w-24">Lot</th>
-                <th className="px-3 py-2.5 w-28 text-center">Alisan Statu</th>
+                <th className="px-3 py-2.5 w-28 text-center">Statu</th>
                 <th className="px-3 py-2.5 w-16 text-right">Palet Adeti</th>
                 <th className="px-3 py-2.5 w-20 text-right sistem-col">Sistem</th>
                 <th className="px-3 py-2.5 w-24 text-right text-blue-300 sayilan-col">Sayılan ▾</th>

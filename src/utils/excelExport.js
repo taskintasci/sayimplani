@@ -595,7 +595,7 @@ export async function exportRedbullRaporFarklar(discrepancies, session, manualRo
     manualRows.forEach((row, i) => {
       const miktar = parseFloat(row.miktar) || 0
       const wsRow  = ws.addRow({
-        siraNo: i + 1, kod: row.kod, ad: row.ad, adres: row.adres,
+        siraNo: i + 1, kod: row.kod, ad: row.ad, sscc: row.sscc, adres: row.adres,
         parti: row.parti, durum: row.durum, sayim: 0, sayilan: miktar, fark: miktar,
         birim: row.birim, not: row.not,
       })
