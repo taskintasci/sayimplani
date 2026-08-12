@@ -1,6 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
+import { useReactToPrint } from 'react-to-print'
 import useStore from '../../store/useStore'
+import { exportAntrepoResults } from '../../utils/excelExport'
+import AntrepoPrintSheet from '../print/AntrepoPrintSheet'
 
 function formatTime(date) {
   if (!date) return ''
@@ -9,7 +12,7 @@ function formatTime(date) {
 }
 
 export default function AntrepoPanel({ onNavigate }) {
-  const { rows, results, session, events, importFormat, clearRows, userRole, finishCounting, updateSessionNote } = useStore(
+  const { rows, results, session, events, importFormat, clearRows, userRole, finishCounting, updateSessionNote, manualRows, firmaProfile } = useStore(
     useShallow(s => ({
       rows:        s.rows,
       results:     s.results,
@@ -20,12 +23,33 @@ export default function AntrepoPanel({ onNavigate }) {
       userRole:    s.userRole,
       finishCounting: s.finishCounting,
       updateSessionNote: s.updateSessionNote,
+      manualRows:  s.manualRows,
+      firmaProfile: s.firmaProfile,
     }))
   )
   const [confirmClear, setConfirmClear] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const isYonetici = userRole === 'yonetici' || userRole === 'superadmin'
   const locked = session.durum === 'Tamamlandı'
+
+  // Panel'den "Tüm Stok" yazdırma/Excel — filtre yok, her zaman tüm satırlar
+  // (rows). Manuel eklenen kalemler (sistemde bulunmayanlar) sayfanın/
+  // Excel'in EN SONUNA eklensin diye sentetik "sistem 0, sayılan miktar"
+  // satır+sonuç olarak printRows/printResults'a birleştiriliyor — PrintSheet
+  // bileşeninin kendisine dokunmaya gerek kalmadı.
+  const printRef = useRef()
+  const handlePrint = useReactToPrint({ contentRef: printRef })
+  const manualAsRows = useMemo(
+    () => manualRows.map(m => ({ id: m.id, adres: m.adres, kod: m.kod, ad: m.ad, parti: m.parti, durum: m.durum, birim: m.birim, sayim: 0 })),
+    [manualRows]
+  )
+  const printRows = useMemo(() => [...rows, ...manualAsRows], [rows, manualAsRows])
+  const printResults = useMemo(() => {
+    if (manualRows.length === 0) return results
+    const merged = { ...results }
+    manualRows.forEach(m => { merged[m.id] = { miktar: m.miktar, notlar: m.not } })
+    return merged
+  }, [results, manualRows])
 
   async function handleClearRows() {
     await clearRows()
@@ -62,28 +86,44 @@ export default function AntrepoPanel({ onNavigate }) {
             {session.type}{session.depoAdi ? ` · ${session.depoAdi}` : ''}{tarihStr ? ` · ${tarihStr}` : ''}
           </p>
         </div>
-        {isYonetici && (
-          session.durum === 'Mutabakat Bekliyor' ? (
-            <span className="flex items-center gap-1.5 px-4 py-2 bg-amber-50 text-amber-700 rounded-lg text-[13px] font-bold">
-              <span className="ms" style={{ fontSize: 16 }}>hourglass_top</span>
-              Mutabakat Onayında Bekliyor
-            </span>
-          ) : session.durum === 'Tamamlandı' ? (
-            <span className="flex items-center gap-1.5 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-[13px] font-bold">
-              <span className="ms" style={{ fontSize: 16 }}>check_circle</span>
-              Tamamlandı
-            </span>
-          ) : (
-            <button
-              onClick={handleFinish}
-              disabled={finishing || rows.length === 0}
-              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <span className="ms" style={{ fontSize: 16 }}>{finishing ? 'hourglass_empty' : 'task_alt'}</span>
-              {finishing ? 'İşleniyor…' : 'Sayımı Bitir'}
-            </button>
-          )
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => exportAntrepoResults(rows, results, session, firmaProfile, manualRows)}
+            disabled={rows.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[12.5px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <span className="ms" style={{ fontSize: 15 }}>download</span> Excel'e Aktar
+          </button>
+          <button
+            onClick={handlePrint}
+            disabled={rows.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[12.5px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <span className="ms" style={{ fontSize: 15 }}>print</span> Yazdır
+          </button>
+          {isYonetici && (
+            session.durum === 'Mutabakat Bekliyor' ? (
+              <span className="flex items-center gap-1.5 px-4 py-2 bg-amber-50 text-amber-700 rounded-lg text-[13px] font-bold">
+                <span className="ms" style={{ fontSize: 16 }}>hourglass_top</span>
+                Mutabakat Onayında Bekliyor
+              </span>
+            ) : session.durum === 'Tamamlandı' ? (
+              <span className="flex items-center gap-1.5 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-[13px] font-bold">
+                <span className="ms" style={{ fontSize: 16 }}>check_circle</span>
+                Tamamlandı
+              </span>
+            ) : (
+              <button
+                onClick={handleFinish}
+                disabled={finishing || rows.length === 0}
+                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span className="ms" style={{ fontSize: 16 }}>{finishing ? 'hourglass_empty' : 'task_alt'}</span>
+                {finishing ? 'İşleniyor…' : 'Sayımı Bitir'}
+              </button>
+            )
+          )}
+        </div>
       </div>
 
       {/* 4 İstatistik Kartı */}
@@ -276,6 +316,14 @@ export default function AntrepoPanel({ onNavigate }) {
           </button>
         </div>
       )}
+
+      {/* Ekranda gizli, yalnızca "Yazdır" tetiklendiğinde kullanılır (Sayım
+          sayfalarındaki mevcut desenle aynı). Manuel kalemler printRows/
+          printResults'a zaten birleştirildiği için PrintSheet'e dokunmadan
+          "en sonda" görünüyorlar. */}
+      <div className="hidden">
+        <AntrepoPrintSheet ref={printRef} rows={printRows} results={printResults} session={session} mode="sayim" sayimTuru="Tüm Stok" firmaUnvani={firmaProfile?.unvan} />
+      </div>
     </div>
   )
 }

@@ -321,7 +321,7 @@ export async function exportAnalizi(rows, results, session, firma = {}) {
   URL.revokeObjectURL(url)
 }
 
-export async function exportResults(rows, results, session, firma = {}) {
+export async function exportResults(rows, results, session, firma = {}, manualRows = []) {
   const { default: ExcelJS } = await import('exceljs')
 
   const workbook = new ExcelJS.Workbook()
@@ -383,6 +383,13 @@ export async function exportResults(rows, results, session, firma = {}) {
     }
   })
 
+  appendManualSection(ws, manualRows, (row, i, miktar) => ({
+    siraNo: i + 1, adres: row.adres, kod: row.kod, ad: row.ad,
+    parti: row.parti, durum: row.durum, adet1: '', ambalaj: '',
+    sayim: 0, sayilan: miktar, fark: miktar, birim: row.birim,
+    status: '', notlar: row.not,
+  }))
+
   ws.views = [{ state: 'frozen', ySplit: 1 }]
 
   const buffer = await workbook.xlsx.writeBuffer()
@@ -393,6 +400,32 @@ export async function exportResults(rows, results, session, firma = {}) {
   a.download   = `${firma.ad ? firma.ad + '_' : ''}Sayim_Sonuclari_${new Date().toISOString().slice(0, 10)}.xlsx`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+// Sayım sonucu Excel'lerinin EN SONUNA "sistemde bulunmayan" manuel kalemleri
+// ekler (Panel'den alınan çıktılarda kullanılıyor). Mutabakat raporundaki
+// (exportRaporFarklar vb.) aynı desenin paylaşılan hali; her şablonun sütun
+// anahtarları farklı olduğu için satır nesnesini `mapper` üretir.
+function appendManualSection(ws, manualRows, mapper) {
+  if (!manualRows || manualRows.length === 0) return
+
+  ws.addRow([])
+  const sepRow = ws.addRow(['SİSTEMDE BULUNMAYAN KALEMLER (MANUEL EKLENDİ)'])
+  sepRow.getCell(1).font      = { bold: true, size: 10, color: { argb: 'FF92400E' } }
+  sepRow.getCell(1).fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }
+  sepRow.getCell(1).alignment = { horizontal: 'left', vertical: 'middle' }
+  ws.mergeCells(sepRow.number, 1, sepRow.number, ws.columns.length)
+  sepRow.height = 18
+
+  manualRows.forEach((row, i) => {
+    const miktar = parseFloat(row.miktar) || 0
+    const wsRow  = ws.addRow(mapper(row, i, miktar))
+    wsRow.eachCell(cell => {
+      cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 === 1 ? 'FFFFF8E8' : 'FFFFFDF5' } }
+      cell.alignment = { vertical: 'middle' }
+    })
+    wsRow.getCell('fark').font = { bold: true, color: { argb: 'FF166534' } }
+  })
 }
 
 function downloadWorkbook(buffer, filename) {
@@ -451,7 +484,7 @@ export async function exportLokasyonMasterdataTemplate() {
   downloadWorkbook(buffer, 'Lokasyon_Sablon.xlsx')
 }
 
-export async function exportAntrepoResults(rows, results, session, firma = {}) {
+export async function exportAntrepoResults(rows, results, session, firma = {}, manualRows = []) {
   const { default: ExcelJS } = await import('exceljs')
 
   const workbook = new ExcelJS.Workbook()
@@ -517,6 +550,15 @@ export async function exportAntrepoResults(rows, results, session, firma = {}) {
       })
     }
   })
+
+  appendManualSection(ws, manualRows, (row, i, miktar) => ({
+    siraNo: i + 1, adres: row.adres, kod: row.kod, ad: row.ad,
+    parti: row.parti, durum: row.durum, kategori: '',
+    paletBarkodu: '', paletAdeti: '',
+    adet1: '', rezerveAdet: '',
+    sayim: 0, sayilan: miktar, fark: miktar, birim: row.birim,
+    status: '', notlar: row.not,
+  }))
 
   ws.views = [{ state: 'frozen', ySplit: 1 }]
 
@@ -614,7 +656,7 @@ export async function exportRedbullRaporFarklar(discrepancies, session, manualRo
   downloadWorkbook(buffer, `${firma.ad ? firma.ad + '_' : ''}Mutabakat_Raporu_${tarih}.xlsx`)
 }
 
-export async function exportRedbullResults(rows, results, session, firma = {}) {
+export async function exportRedbullResults(rows, results, session, firma = {}, manualRows = []) {
   const { default: ExcelJS } = await import('exceljs')
 
   const workbook = new ExcelJS.Workbook()
@@ -675,6 +717,13 @@ export async function exportRedbullResults(rows, results, session, firma = {}) {
       })
     }
   })
+
+  appendManualSection(ws, manualRows, (row, i, miktar) => ({
+    siraNo: i + 1, adres: row.adres, kod: row.kod, ad: row.ad, sscc: row.sscc,
+    parti: row.parti, durum: row.durum, paletAdeti: '',
+    sayim: 0, sayilan: miktar, fark: miktar, birim: row.birim,
+    status: '', notlar: row.not,
+  }))
 
   ws.views = [{ state: 'frozen', ySplit: 1 }]
 
