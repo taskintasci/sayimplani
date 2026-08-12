@@ -30,7 +30,7 @@ export default function AntrepoSayim({ onNavigate }) {
   const [filterGoz, setFilterGoz] = useState([])
   const [filterKategori, setFilterKategori] = useState([])
   const [filterUrunTipi, setFilterUrunTipi] = useState([])
-  const [onlyDiff, setOnlyDiff] = useState(false)
+  const [durumFiltre, setDurumFiltre] = useState('tumu')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(100)
   const [gorevModal, setGorevModal] = useState(false)
@@ -81,13 +81,19 @@ export default function AntrepoSayim({ onNavigate }) {
     return sortRows(result, sortType)
   }, [rows, filterSearch, filterDurum, filterKategori, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz, sortType])
 
+  // Durum filtresi: mini istatistik rozetlerinden (Sayılan/Farklılık/Bekliyor)
+  // bağımsız, ayrı bir kontrol — rozetler sadece bilgi amaçlı kalıyor.
   const filtered = useMemo(() => {
-    if (!onlyDiff) return filteredBase
+    if (durumFiltre === 'tumu') return filteredBase
     return filteredBase.filter(r => {
       const m = results[r.id]?.miktar
-      return m !== undefined && m !== '' && String(m) !== String(r.sayim)
+      const hasValue = m !== undefined && m !== ''
+      if (durumFiltre === 'sayilan')   return hasValue
+      if (durumFiltre === 'farklilik') return hasValue && String(m) !== String(r.sayim)
+      if (durumFiltre === 'bekliyor')  return !hasValue
+      return true
     })
-  }, [filteredBase, onlyDiff, results])
+  }, [filteredBase, durumFiltre, results])
 
   const counted   = useMemo(() => rows.filter(r => results[r.id]?.miktar !== undefined && results[r.id]?.miktar !== ''), [rows, results])
   const diffCount = useMemo(() => rows.filter(r => { const m = results[r.id]?.miktar; return m !== undefined && m !== '' && String(m) !== String(r.sayim) }).length, [rows, results])
@@ -176,10 +182,15 @@ export default function AntrepoSayim({ onNavigate }) {
           <MultiSelect placeholder="Tüm Sıralar"  options={filterOptions.siralar}  value={filterSira}  onChange={setFilterSira} />
           <MultiSelect placeholder="Tüm Kolonlar" options={filterOptions.kolonlar} value={filterKolon} onChange={setFilterKolon} />
           <MultiSelect placeholder="Tüm Gözler"   options={filterOptions.gozler}   value={filterGoz}   onChange={setFilterGoz} />
-          <label className="flex items-center gap-1.5 text-[11.5px] text-slate-500 cursor-pointer ml-1">
-            <input type="checkbox" checked={onlyDiff} onChange={e => setOnlyDiff(e.target.checked)} className="rounded" />
-            Sadece farklılıklar
-          </label>
+          <div className="flex items-center gap-1.5 ml-1">
+            <span className="text-[11.5px] text-slate-400 font-medium">Durum:</span>
+            <select className="fsel" value={durumFiltre} onChange={e => setDurumFiltre(e.target.value)}>
+              <option value="tumu">Tümü</option>
+              <option value="sayilan">Sayılan</option>
+              <option value="farklilik">Farklılık</option>
+              <option value="bekliyor">Bekliyor</option>
+            </select>
+          </div>
           {(filterDurum.length > 0 || filterKategori.length > 0 || filterUrunTipi.length > 0 || filterRaf.length > 0 || filterSira.length > 0 || filterKolon.length > 0 || filterGoz.length > 0 || filterSearch.trim()) && (
             <button
               onClick={() => { setFilterSearch(''); setFilterDurum([]); setFilterKategori([]); setFilterUrunTipi([]); setFilterRaf([]); setFilterSira([]); setFilterKolon([]); setFilterGoz([]) }}
