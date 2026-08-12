@@ -8,7 +8,15 @@ function norm(val) {
 
 function toNum(val) {
   if (val === undefined || val === null || val === '') return ''
-  return String(val).replace(',', '.')
+  // .trim() şart: SheetJS `raw:false` ile hücreyi Excel'in kendi sayı
+  // biçimine göre metne çeviriyor — muhasebe/hizalama biçimleri (ör. `_)`
+  // dolgu kodları) görünmez baştaki/sondaki boşluklar üretebiliyor. Trim
+  // olmadan "108" ekranda "108" gibi görünse de aslında "108 " oluyor;
+  // sayım ekranındaki fark kontrolü (String(sayılan) !== String(sistem))
+  // bu görünmez boşluk yüzünden DOĞRU girilen değerleri bile "farklı"
+  // sayıp kırmızı uyarı gösteriyordu (Redbull "Adet" sütununda tespit
+  // edildi, 2026-08-11).
+  return String(val).trim().replace(',', '.')
 }
 
 // WMS_Rapor_31'deki miktar sütunları muhasebe biçiminde formatlanıyor
