@@ -36,6 +36,7 @@ export async function exportRaporFarklar(discrepancies, session, manualRows = []
     const wsRow = ws.addRow({
       siraNo: row.siraNo, kod: row.kod, ad: row.ad, adres: row.adres,
       parti: row.parti, durum: row.durum, sayim: sistem, sayilan, fark, birim: row.birim,
+      not: row.not,
     })
 
     wsRow.eachCell(cell => {
@@ -122,6 +123,7 @@ export async function exportAntrepoRaporFarklar(discrepancies, session, manualRo
     const wsRow = ws.addRow({
       siraNo: row.siraNo, kod: row.kod, ad: row.ad, adres: row.adres,
       parti: row.parti, sayim: sistem, sayilan, fark, birim: row.birim,
+      not: row.not,
     })
 
     wsRow.eachCell(cell => {
@@ -612,7 +614,7 @@ export async function exportRedbullRaporFarklar(discrepancies, session, manualRo
     const wsRow = ws.addRow({
       siraNo: row.siraNo, kod: row.kod, ad: row.ad, sscc: row.sscc, adres: row.adres,
       parti: row.parti, durum: row.durum, paletAdeti: row.paletAdeti,
-      sayim: sistem, sayilan, fark, birim: row.birim,
+      sayim: sistem, sayilan, fark, birim: row.birim, not: row.not,
     })
 
     wsRow.eachCell(cell => {
