@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useReactToPrint } from 'react-to-print'
 import useStore from '../../store/useStore'
-import { exportRedbullResults } from '../../utils/excelExport'
+import { exportRedbullResults, exportRedbullRaporFarklar } from '../../utils/excelExport'
 import RedbullPrintSheet from '../print/RedbullPrintSheet'
 
 function formatTime(date) {
@@ -53,7 +53,26 @@ export default function RedbullPanel({ onNavigate }) {
     return merged
   }, [results, manualRows])
 
+  const counted  = useMemo(() => rows.filter(r => results[r.id]?.miktar !== undefined && results[r.id]?.miktar !== ''), [rows, results])
+  const diff     = useMemo(() => rows.filter(r => { const m = results[r.id]?.miktar; return m !== undefined && m !== '' && String(m) !== String(r.sayim) }), [rows, results])
+  const approved = useMemo(() => rows.filter(r => results[r.id]?.status === 'Onaylandı'), [rows, results])
+  const pct      = rows.length > 0 ? Math.round(counted.length / rows.length * 100) : 0
+
+  // Sil, Yenisini Yükle sonrası satırlara yeni rastgele id atanınca Firestore'daki
+  // sayım sonuçları öksüz kalıp erişilemez hale geliyor (bkz. handleClearRows) —
+  // 2026-08'de mutabakat bekleyen bir sayımın tüm farkları böyle kayboldu. Silmeden
+  // önce mevcut farkları Excel'e indirip son bir yedek bırakıyoruz.
+  const discrepancies = useMemo(() => diff.map(r => ({
+    ...r,
+    sayilan: results[r.id]?.miktar,
+    fark: Number(results[r.id]?.miktar) - Number(String(r.sayim).replace(',', '.')),
+    not: results[r.id]?.notlar || '',
+  })), [diff, results])
+
   async function handleClearRows() {
+    if (counted.length > 0) {
+      await exportRedbullRaporFarklar(discrepancies, session, manualRows, firmaProfile)
+    }
     await clearRows()
     setConfirmClear(false)
   }
@@ -68,11 +87,6 @@ export default function RedbullPanel({ onNavigate }) {
       setFinishing(false)
     }
   }
-
-  const counted  = useMemo(() => rows.filter(r => results[r.id]?.miktar !== undefined && results[r.id]?.miktar !== ''), [rows, results])
-  const diff     = useMemo(() => rows.filter(r => { const m = results[r.id]?.miktar; return m !== undefined && m !== '' && String(m) !== String(r.sayim) }), [rows, results])
-  const approved = useMemo(() => rows.filter(r => results[r.id]?.status === 'Onaylandı'), [rows, results])
-  const pct      = rows.length > 0 ? Math.round(counted.length / rows.length * 100) : 0
 
   const tarihStr = session.tarih
     ? new Date(session.tarih).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -237,20 +251,28 @@ export default function RedbullPanel({ onNavigate }) {
                     Sil, Yenisini Yükle
                   </button>
                 ) : (
-                  <div className="mt-3 flex items-center gap-2">
-                    <button
-                      onClick={handleClearRows}
-                      className="flex items-center gap-1 px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white text-[11.5px] font-semibold rounded-lg"
-                    >
-                      <span className="ms" style={{ fontSize: 13 }}>delete</span>
-                      Evet, Sil
-                    </button>
-                    <button
-                      onClick={() => setConfirmClear(false)}
-                      className="text-[11.5px] text-slate-500 hover:text-slate-700"
-                    >
-                      İptal
-                    </button>
+                  <div className="mt-3">
+                    {counted.length > 0 && (
+                      <div className="mb-2 px-2.5 py-2 bg-red-50 border border-red-200 rounded-lg text-[11.5px] text-red-700 leading-snug">
+                        <span className="font-bold">Dikkat:</span> {counted.length.toLocaleString('tr')} sayılan kalem{diff.length > 0 ? ` (${diff.length.toLocaleString('tr')} farklılık dahil)` : ''} bu dosyayla ilişkili. Devam ederseniz mevcut Mutabakat Raporu otomatik indirilecek, ardından bu sayım sonuçları KALICI olarak silinecek.
+                        {session.durum === 'Mutabakat Bekliyor' && ' Bu oturum şu an mutabakat onayı bekliyor.'}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleClearRows}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-red-500 hover:bg-red-600 text-white text-[11.5px] font-semibold rounded-lg"
+                      >
+                        <span className="ms" style={{ fontSize: 13 }}>delete</span>
+                        Evet, Sil
+                      </button>
+                      <button
+                        onClick={() => setConfirmClear(false)}
+                        className="text-[11.5px] text-slate-500 hover:text-slate-700"
+                      >
+                        İptal
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
