@@ -207,10 +207,10 @@ export default function HareketlilikSayim({ onNavigate }) {
           {filterOptions.kategoriler.length > 0 && (
             <MultiSelect placeholder="Tüm Kategoriler" options={filterOptions.kategoriler} value={filterKategori} onChange={setFilterKategori} />
           )}
-          <MultiSelect placeholder="Tüm Raflar"   options={filterOptions.raflar}   value={filterRaf}   onChange={setFilterRaf} />
-          <MultiSelect placeholder="Tüm Sıralar"  options={filterOptions.siralar}  value={filterSira}  onChange={setFilterSira} />
-          <MultiSelect placeholder="Tüm Kolonlar" options={filterOptions.kolonlar} value={filterKolon} onChange={setFilterKolon} />
-          <MultiSelect placeholder="Tüm Gözler"   options={filterOptions.gozler}   value={filterGoz}   onChange={setFilterGoz} />
+          <MultiSelect placeholder="Tüm Koridorlar" options={filterOptions.raflar}   value={filterRaf}   onChange={setFilterRaf} />
+          <MultiSelect placeholder="Tüm Sütunlar"   options={filterOptions.siralar}  value={filterSira}  onChange={setFilterSira} />
+          <MultiSelect placeholder="Tüm Sıralar"    options={filterOptions.kolonlar} value={filterKolon} onChange={setFilterKolon} />
+          <MultiSelect placeholder="Tüm Katlar"     options={filterOptions.gozler}   value={filterGoz}   onChange={setFilterGoz} />
           <MultiSelect
             placeholder="Tüm Hareketlilik"
             options={['0-30 gün (Aktif)', '31-90 gün (Normal)', '91-180 gün (Yavaş)', '180+ gün (Hareketsiz)']}
@@ -229,8 +229,8 @@ export default function HareketlilikSayim({ onNavigate }) {
           <div className="ml-auto flex items-center gap-1.5">
             <span className="text-[11.5px] text-slate-400 font-medium">Sıra:</span>
             <select className="fsel" style={{ borderColor: '#93c5fd' }} value={sortType} onChange={e => setSortType(e.target.value)}>
-              <option value="1">Raf › Sıra › Kolon › Göz</option>
-              <option value="2">Raf › Sıra › Göz › Kolon</option>
+              <option value="1">Koridor › Sütun › Sıra › Kat</option>
+              <option value="2">Koridor › Sütun › Kat › Sıra</option>
             </select>
           </div>
         </div>

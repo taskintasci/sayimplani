@@ -4,23 +4,28 @@ const FILTRE_ETIKETLERI = {
   filterKategori: 'Kategori',
   filterUrunTipi: 'Ürün Tipi',
   filterPalet:    'Palet',
-  filterRaf:      'Raf',
-  filterSira:     'Sıra',
-  filterKolon:    'Kolon',
-  filterGoz:      'Göz',
+  filterRaf:      'Koridor',
+  filterSira:     'Sütun',
+  filterKolon:    'Sıra',
+  filterGoz:      'Kat',
   filterGirisGun: 'Giriş Günü',
   filterBina:     'Bina',
   filterKoridor:  'Koridor',
-  filterSutun:    'Sutun',
+  filterSutun:    'Sütun',
   filterKat:      'Kat',
 }
 
-/** Sayım sayfalarındaki aktif filtreleri "Raf: A, B · Sıra: 1" gibi okunabilir
+/** Sayım sayfalarındaki aktif filtreleri "Koridor: A, B · Sütun: 1" gibi okunabilir
  *  bir özete çevirir — görev atarken hangi kritere göre gönderildiğini
  *  görev kartında gösterebilmek için. Aktif filtre yoksa boş string döner. */
 export function buildFiltreOzeti(filters) {
+  // `filterSira` iç anahtarı 4 parçalı şemada (LOS Depo / WMS Antrepo) konum 2'dir
+  // (ortak sözlükte "Sütun"), WMS Depo'nun 5 parçalı şemasında konum 4'tür ("Sıra").
+  // Aynı anahtar iki farklı etikete denk geldiği için şemayı ayırt ediyoruz.
+  const besParcaliSema = filters.filterKoridor !== undefined || filters.filterBina !== undefined
+  const etiketler = besParcaliSema ? { ...FILTRE_ETIKETLERI, filterSira: 'Sıra' } : FILTRE_ETIKETLERI
   const parts = []
-  for (const [key, label] of Object.entries(FILTRE_ETIKETLERI)) {
+  for (const [key, label] of Object.entries(etiketler)) {
     const val = filters[key]
     if (key === 'filterSearch') {
       if (val && val.trim()) parts.push(`${label}: "${val.trim()}"`)

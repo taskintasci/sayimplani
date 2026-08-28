@@ -102,7 +102,7 @@ function SwipeCard({ row, sayilanMiktar, onConfirm, onEdit, isMembran, isAntrepo
           </div>
         )}
 
-        {/* Raf / Adres */}
+        {/* Koridor / Adres */}
         <div className="flex items-center gap-2 mb-3 shrink-0">
           <span className="ms text-blue-500" style={{ fontSize: 22 }}>shelves</span>
           <span className="text-blue-700 font-bold tracking-tight mono" style={{ fontSize: 26 }}>
@@ -569,13 +569,13 @@ export default function SayimciEkran({ mode = 'self' }) {
             >
               {isRedbull ? (
                 <>
-                  <option value="1">Bina › Koridor › Sutun › Sıra › Kat</option>
-                  <option value="2">Bina › Koridor › Sutun › Kat › Sıra</option>
+                  <option value="1">Bina › Koridor › Sütun › Sıra › Kat</option>
+                  <option value="2">Bina › Koridor › Sütun › Kat › Sıra</option>
                 </>
               ) : (
                 <>
-                  <option value="1">Raf › Sıra › Kolon › Göz</option>
-                  <option value="2">Raf › Sıra › Göz › Kolon</option>
+                  <option value="1">Koridor › Sütun › Sıra › Kat</option>
+                  <option value="2">Koridor › Sütun › Kat › Sıra</option>
                 </>
               )}
             </select>
@@ -1102,7 +1102,7 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isRedbull, skuM
               placeholder="Kod seçilince otomatik dolar" className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-slate-500 placeholder-slate-400" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Raf / Adres</label>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Koridor / Adres</label>
             <ComboBox
               value={form.adres}
               onChange={text => setForm(f => ({ ...f, adres: text }))}

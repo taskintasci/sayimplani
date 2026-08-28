@@ -165,7 +165,7 @@ export default function RedbullSayim({ onNavigate }) {
           <MultiSelect placeholder="Tüm Durumlar"  options={filterOptions.durumlar}   value={filterDurum}   onChange={setFilterDurum} />
           <MultiSelect placeholder="Tüm Binalar"    options={filterOptions.binalar}    value={filterBina}    onChange={setFilterBina} />
           <MultiSelect placeholder="Tüm Koridorlar" options={filterOptions.koridorlar} value={filterKoridor} onChange={setFilterKoridor} />
-          <MultiSelect placeholder="Tüm Sutunlar"   options={filterOptions.sutunlar}   value={filterSutun}   onChange={setFilterSutun} />
+          <MultiSelect placeholder="Tüm Sütunlar"   options={filterOptions.sutunlar}   value={filterSutun}   onChange={setFilterSutun} />
           <MultiSelect placeholder="Tüm Sıralar"    options={filterOptions.siralar}    value={filterSira}    onChange={setFilterSira} />
           <MultiSelect placeholder="Tüm Katlar"     options={filterOptions.katlar}     value={filterKat}     onChange={setFilterKat} />
           <div className="flex items-center gap-1.5 ml-1">
@@ -188,8 +188,8 @@ export default function RedbullSayim({ onNavigate }) {
           <div className="ml-auto flex items-center gap-1.5">
             <span className="text-[11.5px] text-slate-400 font-medium">Sıra:</span>
             <select className="fsel" style={{ borderColor: '#93c5fd' }} value={sortType} onChange={e => setSortType(e.target.value)}>
-              <option value="1">Bina › Koridor › Sutun › Sıra › Kat</option>
-              <option value="2">Bina › Koridor › Sutun › Kat › Sıra</option>
+              <option value="1">Bina › Koridor › Sütun › Sıra › Kat</option>
+              <option value="2">Bina › Koridor › Sütun › Kat › Sıra</option>
             </select>
           </div>
         </div>

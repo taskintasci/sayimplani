@@ -19,7 +19,7 @@ function DurumBadge({ durum }) {
 }
 
 export default function KorSayim({ onNavigate }) {
-  const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, korCodes, korMatched, addKorCodes, removeKorCode, clearKor, pendingKodFilter, clearPendingKodFilter, firmaProfile, sortType, setSortType } = useStore()
+  const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, korCodes, korMatched, addKorCodes, removeKorCode, clearKor, pendingKodFilter, clearPendingKodFilter, pendingKorFilter, clearPendingKorFilter, firmaProfile, sortType, setSortType } = useStore()
   const printRef = useRef()
   const locked = session.durum === 'Tamamlandı'
 
@@ -47,6 +47,17 @@ export default function KorSayim({ onNavigate }) {
       clearPendingKodFilter()
     }
   }, [pendingKodFilter])
+
+  // Raf Listesi'nden aktarılan koridor/adres filtresini uygula
+  useEffect(() => {
+    if (!pendingKorFilter) return
+    if (pendingKorFilter.filterDurum) setFilterDurum(pendingKorFilter.filterDurum)
+    if (pendingKorFilter.filterRaf)   setFilterRaf(pendingKorFilter.filterRaf)
+    if (pendingKorFilter.filterSira)  setFilterSira(pendingKorFilter.filterSira)
+    if (pendingKorFilter.filterKolon) setFilterKolon(pendingKorFilter.filterKolon)
+    if (pendingKorFilter.filterGoz)   setFilterGoz(pendingKorFilter.filterGoz)
+    clearPendingKorFilter()
+  }, [pendingKorFilter])
 
   function toggleSistem() {
     const next = !hideSistem
@@ -106,9 +117,12 @@ export default function KorSayim({ onNavigate }) {
     })
   }, [filteredBase, onlyDiff, results])
 
-  const counted   = useMemo(() => korMatched.filter(r => results[r.id]?.miktar !== undefined && results[r.id]?.miktar !== ''), [korMatched, results])
-  const diffCount = useMemo(() => korMatched.filter(r => { const m = results[r.id]?.miktar; return m !== undefined && m !== '' && String(m) !== String(r.sayim) }).length, [korMatched, results])
-  const waiting   = korMatched.length - counted.length
+  // Sayaçlar aktif filtreye (filteredBase) göre — Raf Listesi'nden bir koridor
+  // seçilip aktarıldığında üstteki Sayılan/Farklılık/Bekliyor yalnız o koridoru
+  // yansıtsın (korMatched, kodun filtre dışı diğer lokasyonlarını da içerir).
+  const counted   = useMemo(() => filteredBase.filter(r => results[r.id]?.miktar !== undefined && results[r.id]?.miktar !== ''), [filteredBase, results])
+  const diffCount = useMemo(() => filteredBase.filter(r => { const m = results[r.id]?.miktar; return m !== undefined && m !== '' && String(m) !== String(r.sayim) }).length, [filteredBase, results])
+  const waiting   = filteredBase.length - counted.length
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage   = Math.min(page, totalPages)
@@ -130,9 +144,9 @@ export default function KorSayim({ onNavigate }) {
           <div>
             <h1 className="text-[15px] font-bold text-slate-900">Kör Stok Sayımı</h1>
             <p className="text-[11.5px] text-slate-400 mono">
-              {korMatched.length > 0
-                ? `${korMatched.length.toLocaleString('tr')} kalem · %${Math.round(counted.length / korMatched.length * 100)} sayıldı${diffCount > 0 ? ` · ${diffCount} fark` : ''}`
-                : 'Kod ekleyerek kör sayım listesi oluşturun'}
+              {filteredBase.length > 0
+                ? `${filteredBase.length.toLocaleString('tr')} kalem · %${Math.round(counted.length / filteredBase.length * 100)} sayıldı${diffCount > 0 ? ` · ${diffCount} fark` : ''}`
+                : korCodes.length > 0 ? 'Filtreye uyan kalem yok' : 'Kod ekleyerek kör sayım listesi oluşturun'}
             </p>
           </div>
           <div className="flex items-center gap-2 no-print">
@@ -241,10 +255,10 @@ export default function KorSayim({ onNavigate }) {
           {filterOptions.kategoriler.length > 0 && (
             <MultiSelect placeholder="Tüm Kategoriler" options={filterOptions.kategoriler} value={filterKategori} onChange={setFilterKategori} />
           )}
-          <MultiSelect placeholder="Tüm Raflar"   options={filterOptions.raflar}   value={filterRaf}   onChange={setFilterRaf} />
-          <MultiSelect placeholder="Tüm Sıralar"  options={filterOptions.siralar}  value={filterSira}  onChange={setFilterSira} />
-          <MultiSelect placeholder="Tüm Kolonlar" options={filterOptions.kolonlar} value={filterKolon} onChange={setFilterKolon} />
-          <MultiSelect placeholder="Tüm Gözler"   options={filterOptions.gozler}   value={filterGoz}   onChange={setFilterGoz} />
+          <MultiSelect placeholder="Tüm Koridorlar" options={filterOptions.raflar}   value={filterRaf}   onChange={setFilterRaf} />
+          <MultiSelect placeholder="Tüm Sütunlar"   options={filterOptions.siralar}  value={filterSira}  onChange={setFilterSira} />
+          <MultiSelect placeholder="Tüm Sıralar"    options={filterOptions.kolonlar} value={filterKolon} onChange={setFilterKolon} />
+          <MultiSelect placeholder="Tüm Katlar"     options={filterOptions.gozler}   value={filterGoz}   onChange={setFilterGoz} />
           <label className="flex items-center gap-1.5 text-[11.5px] text-slate-500 cursor-pointer ml-1">
             <input type="checkbox" checked={onlyDiff} onChange={e => setOnlyDiff(e.target.checked)} className="rounded" />
             Sadece farklılıklar
@@ -260,8 +274,8 @@ export default function KorSayim({ onNavigate }) {
           <div className="ml-auto flex items-center gap-1.5">
             <span className="text-[11.5px] text-slate-400 font-medium">Sıra:</span>
             <select className="fsel" style={{ borderColor: '#93c5fd' }} value={sortType} onChange={e => setSortType(e.target.value)}>
-              <option value="1">Raf › Sıra › Kolon › Göz</option>
-              <option value="2">Raf › Sıra › Göz › Kolon</option>
+              <option value="1">Koridor › Sütun › Sıra › Kat</option>
+              <option value="2">Koridor › Sütun › Kat › Sıra</option>
             </select>
           </div>
         </div>

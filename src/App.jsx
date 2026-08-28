@@ -16,6 +16,7 @@ const ExcelYukle      = lazy(() => import('./components/pages/ExcelYukle'))
 const StokSayim       = lazy(() => import('./components/pages/StokSayim'))
 const KorSayim        = lazy(() => import('./components/pages/KorSayim'))
 const SkuListesi      = lazy(() => import('./components/pages/SkuListesi'))
+const RafListesi      = lazy(() => import('./components/pages/RafListesi'))
 const Rapor           = lazy(() => import('./components/pages/Rapor'))
 const SayimAnalizi    = lazy(() => import('./components/pages/SayimAnalizi'))
 const KorSayimAnalizi = lazy(() => import('./components/pages/KorSayimAnalizi'))
@@ -51,6 +52,7 @@ const PAGES = {
   analiz:    { Component: SayimAnalizi,     fullHeight: false, roles: YON_KONT, sablon: [SABLON.STANDART] },
   rapor:     { Component: Rapor,            fullHeight: false, roles: YON_KONT, sablon: [SABLON.STANDART] },
   skuliste:  { Component: SkuListesi,       fullHeight: true,  roles: YON, sablon: [SABLON.STANDART] },
+  rafliste:  { Component: RafListesi,       fullHeight: true,  roles: YON, sablon: [SABLON.STANDART] },
   kor:       { Component: KorSayim,         fullHeight: true,  roles: YON, sablon: [SABLON.STANDART] },
   koranaliz: { Component: KorSayimAnalizi,  fullHeight: false, roles: YON_KONT, sablon: [SABLON.STANDART] },
   korrapor:      { Component: KorSayimRapor,      fullHeight: false, roles: YON_KONT, sablon: [SABLON.STANDART] },
@@ -63,6 +65,7 @@ const PAGES = {
   antrepoanaliz:    { Component: SayimAnalizi,         fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS31] },
   antreporapor:     { Component: AntrepoRapor,         fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS31] },
   antreposkuliste:  { Component: SkuListesi,           fullHeight: true,  roles: YON, sablon: [SABLON.WMS31] },
+  antreporafliste:  { Component: RafListesi,           fullHeight: true,  roles: YON, sablon: [SABLON.WMS31] },
   antrepokor:       { Component: AntrepoKorSayim,      fullHeight: true,  roles: YON, sablon: [SABLON.WMS31] },
   antrepokoranaliz: { Component: KorSayimAnalizi,      fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS31] },
   antrepokorrapor:  { Component: AntrepoKorSayimRapor, fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS31] },
@@ -71,6 +74,7 @@ const PAGES = {
   redbullanaliz:    { Component: SayimAnalizi,         fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
   redbullrapor:     { Component: RedbullRapor,         fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
   redbullskuliste:  { Component: SkuListesi,           fullHeight: true,  roles: YON, sablon: [SABLON.WMS_REDBULL] },
+  redbullrafliste:  { Component: RafListesi,           fullHeight: true,  roles: YON, sablon: [SABLON.WMS_REDBULL] },
   redbullkor:       { Component: RedbullKorSayim,      fullHeight: true,  roles: YON, sablon: [SABLON.WMS_REDBULL] },
   redbullkoranaliz: { Component: KorSayimAnalizi,      fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
   redbullkorrapor:  { Component: RedbullKorSayimRapor, fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },

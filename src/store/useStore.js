@@ -113,6 +113,7 @@ const useStore = create((set, get) => ({
         korCodes: [], korMatched: [],
         manualRows: [], korManualRows: [],
         pendingKodFilter: null,
+        pendingKorFilter: null,
         events: [],
         session: {
           type: 'Yıl Sonu Sayımı', depoAdi: '',
@@ -190,7 +191,7 @@ const useStore = create((set, get) => ({
       activeFirma: firmaId, firmaProfile: firmaDoc || null,
       activeSessionId: null, session: null,
       rows: [], results: {}, korCodes: [], korMatched: [],
-      manualRows: [], korManualRows: [], rowsLoading: false, resultsLoading: false,
+      manualRows: [], korManualRows: [], pendingKorFilter: null, rowsLoading: false, resultsLoading: false,
     })
     await Promise.all([get().loadSessions(), get().loadFirmaMasterdata(firmaId)])
   },
@@ -305,7 +306,7 @@ const useStore = create((set, get) => ({
       depoAdi:      session.depoAdi || '',
       atananRows,                       // array<rowId>
       sayimTipi:    sayimTipi || 'stok', // 'stok' | 'kor' | 'hareketlilik' | 'membran' | 'antrepo' | 'antrepokor'
-      filtreOzeti:  filtreOzeti || '',   // görev atanırken aktif filtrelerin okunabilir özeti (ör. "Raf: A, B")
+      filtreOzeti:  filtreOzeti || '',   // görev atanırken aktif filtrelerin okunabilir özeti (ör. "Koridor: A, B")
       firma:        activeFirma,
       durum:        'bekliyor',
       createdAt:    serverTimestamp(),
@@ -442,6 +443,13 @@ const useStore = create((set, get) => ({
   setPendingKodFilter: (kod) => set({ pendingKodFilter: kod }),
   clearPendingKodFilter: () => set({ pendingKodFilter: null }),
 
+  // Raf Listesi → Kör Sayım geçişinde taşınan çok-değerli adres filtresi.
+  // Ör. { filterRaf: ['A12','A13'] } veya Redbull'da { filterKoridor: [...] }.
+  // Hedef kör sayım sayfası mount'ta okuyup ilgili MultiSelect'lere yazar ve temizler.
+  pendingKorFilter: null,
+  setPendingKorFilter: (obj) => set({ pendingKorFilter: obj }),
+  clearPendingKorFilter: () => set({ pendingKorFilter: null }),
+
   // ── Toast bildirimi (sayfa altında, ~3 sn) ────────────────────────────────
   // Kalıcı "Son İşlemler" logundan (addEvent) ayrıdır: bu sadece anlık bir
   // geri bildirim (ör. manuel stok eklendi). Render'ı Toast.jsx yapıyor.
@@ -475,11 +483,11 @@ const useStore = create((set, get) => ({
     stopSessionListeners()
 
     if (!id) {
-      set({ activeSessionId: null, rows: [], results: {}, korCodes: [], korMatched: [], manualRows: [], korManualRows: [], rowsLoading: false, resultsLoading: false, session: null })
+      set({ activeSessionId: null, rows: [], results: {}, korCodes: [], korMatched: [], manualRows: [], korManualRows: [], pendingKorFilter: null, rowsLoading: false, resultsLoading: false, session: null })
       return
     }
 
-    set({ activeSessionId: id, rows: [], results: {}, korCodes: [], korMatched: [], manualRows: [], korManualRows: [], rowsLoading: true, resultsLoading: true })
+    set({ activeSessionId: id, rows: [], results: {}, korCodes: [], korMatched: [], manualRows: [], korManualRows: [], pendingKorFilter: null, rowsLoading: true, resultsLoading: true })
 
     // Sayımcı rolünde loadSessions hiç çağrılmaz; yerel listede yoksa doğrudan Firestore'dan çek
     let sessionData = get().sessions.find(s => s.id === id)
@@ -621,6 +629,7 @@ const useStore = create((set, get) => ({
       korMatched:    [],
       manualRows:    [],
       korManualRows: [],
+      pendingKorFilter: null,
       session: {
         type:         data.type,
         depoAdi:      data.depoAdi,
@@ -982,7 +991,7 @@ const useStore = create((set, get) => ({
 
   reset: () => {
     stopSessionListeners()
-    set({ rows: [], results: {}, korCodes: [], korMatched: [] })
+    set({ rows: [], results: {}, korCodes: [], korMatched: [], pendingKorFilter: null })
   },
 }))
 

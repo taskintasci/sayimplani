@@ -9,7 +9,7 @@ import GorevAtaModal from './GorevAtaModal'
 import RedbullDurumBadge from '../shared/RedbullDurumBadge'
 
 export default function RedbullKorSayim({ onNavigate }) {
-  const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, korCodes, korMatched, addKorCodes, removeKorCode, clearKor, pendingKodFilter, clearPendingKodFilter, firmaProfile, sortType, setSortType } = useStore()
+  const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, korCodes, korMatched, addKorCodes, removeKorCode, clearKor, pendingKodFilter, clearPendingKodFilter, pendingKorFilter, clearPendingKorFilter, firmaProfile, sortType, setSortType } = useStore()
   const printRef = useRef()
   const locked = session.durum === 'Tamamlandı'
 
@@ -45,6 +45,18 @@ export default function RedbullKorSayim({ onNavigate }) {
       clearPendingKodFilter()
     }
   }, [pendingKodFilter])
+
+  // Raf Listesi'nden aktarılan koridor/adres filtresini uygula
+  useEffect(() => {
+    if (!pendingKorFilter) return
+    if (pendingKorFilter.filterDurum)   setFilterDurum(pendingKorFilter.filterDurum)
+    if (pendingKorFilter.filterBina)    setFilterBina(pendingKorFilter.filterBina)
+    if (pendingKorFilter.filterKoridor) setFilterKoridor(pendingKorFilter.filterKoridor)
+    if (pendingKorFilter.filterSutun)   setFilterSutun(pendingKorFilter.filterSutun)
+    if (pendingKorFilter.filterSira)    setFilterSira(pendingKorFilter.filterSira)
+    if (pendingKorFilter.filterKat)     setFilterKat(pendingKorFilter.filterKat)
+    clearPendingKorFilter()
+  }, [pendingKorFilter])
 
   function toggleSistem() {
     const next = !hideSistem
@@ -103,9 +115,12 @@ export default function RedbullKorSayim({ onNavigate }) {
     })
   }, [filteredBase, onlyDiff, results])
 
-  const counted   = useMemo(() => korMatched.filter(r => results[r.id]?.miktar !== undefined && results[r.id]?.miktar !== ''), [korMatched, results])
-  const diffCount = useMemo(() => korMatched.filter(r => { const m = results[r.id]?.miktar; return m !== undefined && m !== '' && String(m) !== String(r.sayim) }).length, [korMatched, results])
-  const waiting   = korMatched.length - counted.length
+  // Sayaçlar aktif filtreye (filteredBase) göre — Raf Listesi'nden bir koridor
+  // seçilip aktarıldığında üstteki Sayılan/Farklılık/Bekliyor yalnız o koridoru
+  // yansıtsın (korMatched, kodun filtre dışı diğer lokasyonlarını da içerir).
+  const counted   = useMemo(() => filteredBase.filter(r => results[r.id]?.miktar !== undefined && results[r.id]?.miktar !== ''), [filteredBase, results])
+  const diffCount = useMemo(() => filteredBase.filter(r => { const m = results[r.id]?.miktar; return m !== undefined && m !== '' && String(m) !== String(r.sayim) }).length, [filteredBase, results])
+  const waiting   = filteredBase.length - counted.length
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage   = Math.min(page, totalPages)
@@ -127,9 +142,9 @@ export default function RedbullKorSayim({ onNavigate }) {
           <div>
             <h1 className="text-[15px] font-bold text-slate-900">WMS Depo Sayım (Redbull) — Kör Sayım</h1>
             <p className="text-[11.5px] text-slate-400 mono">
-              {korMatched.length > 0
-                ? `${korMatched.length.toLocaleString('tr')} kalem · %${Math.round(counted.length / korMatched.length * 100)} sayıldı${diffCount > 0 ? ` · ${diffCount} fark` : ''}`
-                : 'Kod ekleyerek kör sayım listesi oluşturun'}
+              {filteredBase.length > 0
+                ? `${filteredBase.length.toLocaleString('tr')} kalem · %${Math.round(counted.length / filteredBase.length * 100)} sayıldı${diffCount > 0 ? ` · ${diffCount} fark` : ''}`
+                : korCodes.length > 0 ? 'Filtreye uyan kalem yok' : 'Kod ekleyerek kör sayım listesi oluşturun'}
             </p>
           </div>
           <div className="flex items-center gap-2 no-print">
@@ -234,7 +249,7 @@ export default function RedbullKorSayim({ onNavigate }) {
           <MultiSelect placeholder="Tüm Durumlar"  options={filterOptions.durumlar}   value={filterDurum}   onChange={setFilterDurum} />
           <MultiSelect placeholder="Tüm Binalar"    options={filterOptions.binalar}    value={filterBina}    onChange={setFilterBina} />
           <MultiSelect placeholder="Tüm Koridorlar" options={filterOptions.koridorlar} value={filterKoridor} onChange={setFilterKoridor} />
-          <MultiSelect placeholder="Tüm Sutunlar"   options={filterOptions.sutunlar}   value={filterSutun}   onChange={setFilterSutun} />
+          <MultiSelect placeholder="Tüm Sütunlar"   options={filterOptions.sutunlar}   value={filterSutun}   onChange={setFilterSutun} />
           <MultiSelect placeholder="Tüm Sıralar"    options={filterOptions.siralar}    value={filterSira}    onChange={setFilterSira} />
           <MultiSelect placeholder="Tüm Katlar"     options={filterOptions.katlar}     value={filterKat}     onChange={setFilterKat} />
           <label className="flex items-center gap-1.5 text-[11.5px] text-slate-500 cursor-pointer ml-1">
@@ -252,8 +267,8 @@ export default function RedbullKorSayim({ onNavigate }) {
           <div className="ml-auto flex items-center gap-1.5">
             <span className="text-[11.5px] text-slate-400 font-medium">Sıra:</span>
             <select className="fsel" style={{ borderColor: '#93c5fd' }} value={sortType} onChange={e => setSortType(e.target.value)}>
-              <option value="1">Bina › Koridor › Sutun › Sıra › Kat</option>
-              <option value="2">Bina › Koridor › Sutun › Kat › Sıra</option>
+              <option value="1">Bina › Koridor › Sütun › Sıra › Kat</option>
+              <option value="2">Bina › Koridor › Sütun › Kat › Sıra</option>
             </select>
           </div>
         </div>
