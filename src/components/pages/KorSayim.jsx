@@ -48,6 +48,13 @@ export default function KorSayim({ onNavigate }) {
     }
   }, [pendingKodFilter])
 
+  // Global body sınıfları (hide-sistem/hide-sayilan) sayfa değişince kalmasın —
+  // sonraki sayfada Sistem/Sayılan kolonu görünmez kalıyordu.
+  useEffect(() => () => {
+    document.body.classList.remove('hide-sistem')
+    document.body.classList.remove('hide-sayilan')
+  }, [])
+
   function toggleSistem() {
     const next = !hideSistem
     setHideSistem(next)

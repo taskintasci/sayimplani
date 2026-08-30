@@ -518,10 +518,12 @@ const useStore = create((set, get) => ({
         const korCodes = sessionData.korCodes || []
         const korMatched = korCodes.length > 0 ? rows.filter(r => korCodes.includes(r.kod)) : []
         // Koridor Sayımı adres bazlıdır: kodun tüm lokasyonları değil, YALNIZ
-        // seçili koridorlardaki satırlar eşleşir (bkz. getKoridor).
+        // seçili koridorlardaki satırlar eşleşir (bkz. getKoridor). `sablon` yoksa
+        // hangi adres parçasının koridor olduğu bilinemez → boş bırakılır (bir
+        // sonraki snapshot firmaProfile dolunca doğru hesaplar).
         const sablon = get().firmaProfile?.sablon
         const koridorlar = sessionData.koridorlar || []
-        const koridorMatched = koridorlar.length > 0
+        const koridorMatched = koridorlar.length > 0 && sablon
           ? rows.filter(r => koridorlar.includes(getKoridor(r.adres, sablon)))
           : []
         const manualRows        = sessionData.manualRows        || []
@@ -595,7 +597,7 @@ const useStore = create((set, get) => ({
             korCodes,
             korMatched:    korCodes.length > 0 ? state.rows.filter(r => korCodes.includes(r.kod)) : [],
             koridorlar,
-            koridorMatched: koridorlar.length > 0
+            koridorMatched: koridorlar.length > 0 && sablon
               ? state.rows.filter(r => koridorlar.includes(getKoridor(r.adres, sablon)))
               : [],
             session: state.session ? {

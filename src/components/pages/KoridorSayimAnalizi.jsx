@@ -1,5 +1,6 @@
 import useStore from '../../store/useStore'
 import { exportAnalizi } from '../../utils/excelExport'
+import { SABLON } from '../../constants'
 
 function AccBar({ pct }) {
   return (
@@ -16,6 +17,12 @@ export default function KoridorSayimAnalizi({ onNavigate }) {
   const { koridorMatched, results, session, koridorManualRows: manualRows, firmaProfile } = useStore()
 
   const rows = koridorMatched
+
+  // Bu bileşen 3 şablonda paylaşılıyor (koridoranaliz / antrepokoridoranaliz /
+  // redbullkoridoranaliz) — "Sayfaya Git" hedefi aktif şablona göre değişmeli.
+  const sayimRoute = firmaProfile?.sablon === SABLON.WMS31 ? 'antrepokoridorsayim'
+    : firmaProfile?.sablon === SABLON.WMS_REDBULL ? 'redbullkoridorsayim'
+    : 'koridorsayim'
 
   const counted = rows.filter(r => results[r.id]?.miktar !== undefined && results[r.id]?.miktar !== '')
   const discrepancies = rows.filter(r => {
@@ -70,7 +77,7 @@ export default function KoridorSayimAnalizi({ onNavigate }) {
           <span className="ms text-slate-300 mb-3 block" style={{ fontSize: 48 }}>view_week</span>
           <div className="text-[14px] font-semibold text-slate-700 mb-1">Analiz için veri yok</div>
           <div className="text-[13px] text-slate-400 mb-4">Raf Listesi'nden koridor seçerek liste oluşturun</div>
-          <button onClick={() => onNavigate('koridorsayim')} className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700">
+          <button onClick={() => onNavigate(sayimRoute)} className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700">
             <span className="ms" style={{ fontSize: 16 }}>view_week</span> Koridor Sayımı Sayfasına Git
           </button>
         </div>

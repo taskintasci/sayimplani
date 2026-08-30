@@ -36,6 +36,12 @@ export default function RedbullKoridorSayim({ onNavigate }) {
   // eşitliyoruz — aksi halde buton "Sistemi Göster" derken tablo hâlâ görünür kalır.
   useEffect(() => {
     document.body.classList.toggle('hide-sistem', hideSistem)
+    // Global body sınıfları sayfa değişince kalmasın — sonraki sayfada
+    // Sistem/Sayılan kolonu görünmez kalıyordu (opacity:0 + pointer-events:none)
+    return () => {
+      document.body.classList.remove('hide-sistem')
+      document.body.classList.remove('hide-sayilan')
+    }
   }, [])
 
   useEffect(() => {
@@ -121,6 +127,20 @@ export default function RedbullKoridorSayim({ onNavigate }) {
   )
 
   useEffect(() => { setPage(1) }, [filtered.length, pageSize])
+
+  // Görev özeti: atanan (tüm filtreler uygulanmış) satırların gerçekten hangi
+  // koridorlarda olduğu + koridor dışı aktif filtreler. `koridorlar` state'i
+  // yerine filtered'dan türetilir ki ek filtreler daralttıysa özet de daralsın;
+  // koridor boyutu (filterKoridor) burada tekrar edilmez.
+  const gorevOzeti = useMemo(() => {
+    const kor = [...new Set(filtered.map(r => getKoridor(r.adres, sablon)).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'tr', { numeric: true }))
+    const korStr = kor.length
+      ? `Koridor: ${kor.slice(0, 6).join(', ')}${kor.length > 6 ? ` +${kor.length - 6}` : ''}`
+      : ''
+    return [korStr, buildFiltreOzeti({ filterSearch, filterDurum, filterBina, filterSutun, filterSira, filterKat })]
+      .filter(Boolean).join(' · ')
+  }, [filtered, sablon, filterSearch, filterDurum, filterBina, filterSutun, filterSira, filterKat])
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -445,10 +465,7 @@ export default function RedbullKoridorSayim({ onNavigate }) {
           rows={filtered}
           onClose={() => setGorevModal(false)}
           sayimTipi="redbullkoridor"
-          filtreOzeti={[
-            koridorlar.length ? `Koridor: ${koridorlar.join(', ')}` : '',
-            buildFiltreOzeti({ filterSearch, filterDurum, filterBina, filterKoridor, filterSutun, filterSira, filterKat }),
-          ].filter(Boolean).join(' · ')}
+          filtreOzeti={gorevOzeti}
         />
       )}
     </div>

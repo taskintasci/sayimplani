@@ -114,11 +114,21 @@ export default function Sidebar({ activePage, onNavigate, className = 'flex' }) 
   // Rol + şablon + oturum-bağımlılığı filtrelemesi, ardından baştaki/ardışık/
   // sondaki divider'ları temizle (bir şablon bloğu tamamen filtrelenince o
   // bloğun ayracı ortada asılı kalmasın)
-  const visible = MENU.filter(m =>
+  const raw = MENU.filter(m =>
     m.roles.includes(userRole) &&
     (!m.sablon || !currentSablon || m.sablon.includes(currentSablon)) &&
     (m.sessionless || activeSessionId)
   )
+  // Aynı id birden fazla şablon bloğunda geçebiliyor (ör. sayimciekran) —
+  // currentSablon henüz yüklenmemişken (!currentSablon dalı) hepsi geçerdi;
+  // ilk görüneni tut.
+  const seen = new Set()
+  const visible = raw.filter(m => {
+    if (m.divider || !m.id) return true
+    if (seen.has(m.id)) return false
+    seen.add(m.id)
+    return true
+  })
   const cleaned = visible.filter((m, i) => {
     if (!m.divider) return true
     const prev = visible[i - 1]

@@ -37,6 +37,12 @@ export default function RedbullKorSayim({ onNavigate }) {
   // eşitliyoruz — aksi halde buton "Sistemi Göster" derken tablo hâlâ görünür kalır.
   useEffect(() => {
     document.body.classList.toggle('hide-sistem', hideSistem)
+    // Global body sınıfları sayfa değişince kalmasın — sonraki sayfada
+    // Sistem/Sayılan kolonu görünmez kalıyordu (opacity:0 + pointer-events:none)
+    return () => {
+      document.body.classList.remove('hide-sistem')
+      document.body.classList.remove('hide-sayilan')
+    }
   }, [])
 
   useEffect(() => {
