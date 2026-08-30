@@ -460,7 +460,10 @@ export default function KoridorSayim({ onNavigate }) {
           rows={filtered}
           onClose={() => setGorevModal(false)}
           sayimTipi="koridor"
-          filtreOzeti={buildFiltreOzeti({ filterSearch, filterDurum, filterKategori, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz })}
+          filtreOzeti={[
+            koridorlar.length ? `Koridor: ${koridorlar.join(', ')}` : '',
+            buildFiltreOzeti({ filterSearch, filterDurum, filterKategori, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz }),
+          ].filter(Boolean).join(' · ')}
         />
       )}
     </div>

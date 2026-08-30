@@ -445,7 +445,10 @@ export default function RedbullKoridorSayim({ onNavigate }) {
           rows={filtered}
           onClose={() => setGorevModal(false)}
           sayimTipi="redbullkoridor"
-          filtreOzeti={buildFiltreOzeti({ filterSearch, filterDurum, filterBina, filterKoridor, filterSutun, filterSira, filterKat })}
+          filtreOzeti={[
+            koridorlar.length ? `Koridor: ${koridorlar.join(', ')}` : '',
+            buildFiltreOzeti({ filterSearch, filterDurum, filterBina, filterKoridor, filterSutun, filterSira, filterKat }),
+          ].filter(Boolean).join(' · ')}
         />
       )}
     </div>

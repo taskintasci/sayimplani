@@ -467,7 +467,9 @@ export default function SayimciEkran({ mode = 'self' }) {
                             )}
                             {g.filtreOzeti && (
                               <p className="inline-flex items-center gap-1.5 text-[11px] text-blue-600 bg-blue-50 rounded-lg px-2 py-1 mb-2">
-                                <span className="ms" style={{ fontSize: 13 }}>filter_alt</span> {g.filtreOzeti}
+                                <span className="ms" style={{ fontSize: 13 }}>
+                                  {['koridor', 'antrepokoridor', 'redbullkoridor'].includes(g.sayimTipi) ? 'view_week' : 'filter_alt'}
+                                </span> {g.filtreOzeti}
                               </p>
                             )}
                             <div className="flex items-center justify-between">
