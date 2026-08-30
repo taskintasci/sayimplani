@@ -148,11 +148,11 @@ service cloud.firestore {
       // engellenen, ZATEN Tamamlandı olan bir oturuma sonradan yapılacak yazmalar.
       // Sayımcı için DAR bir istisna (2026-08-11): sayım ekranındaki "Manuel
       // Fazla Stok" modalı, sistemde bulunmayan kalemleri session dokümanının
-      // manualRows/korManualRows dizisine yazar. Bu izin YOKKEN sayımcının
-      // eklediği kalem yerel state'te görünüyor ama Firestore yazması
-      // permission-denied ile sessizce reddediliyordu → yöneticinin rapor
-      // ekranında o satırlar hiç görünmüyordu. Sadece bu iki dizi + damga
-      // alanları; type/durum/korCodes/firma gibi alanlara dokunamaz.
+      // manualRows/korManualRows/koridorManualRows dizisine yazar. Bu izin
+      // YOKKEN sayımcının eklediği kalem yerel state'te görünüyor ama Firestore
+      // yazması permission-denied ile sessizce reddediliyordu → yöneticinin rapor
+      // ekranında o satırlar hiç görünmüyordu. Sadece bu üç dizi + damga
+      // alanları; type/durum/korCodes/koridorlar/firma gibi alanlara dokunamaz.
       // (Alan içi "sadece ekleme yapıldı" ispatı rules dilinde mümkün değil;
       // sayımcı zaten results alt koleksiyonuna serbestçe yazabildiği için
       // risk profili aynı seviyede kalıyor.)
@@ -167,7 +167,7 @@ service cloud.firestore {
           isSignedIn()
           && sameFirma(resource.data.firma)
           && userRole() == 'sayimci'
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['manualRows', 'korManualRows', 'updatedAt', 'updatedBy'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['manualRows', 'korManualRows', 'koridorManualRows', 'updatedAt', 'updatedBy'])
         )
       ) && (
         resource.data.durum != 'Tamamlandı'

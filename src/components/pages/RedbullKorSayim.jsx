@@ -9,7 +9,7 @@ import GorevAtaModal from './GorevAtaModal'
 import RedbullDurumBadge from '../shared/RedbullDurumBadge'
 
 export default function RedbullKorSayim({ onNavigate }) {
-  const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, korCodes, korMatched, addKorCodes, removeKorCode, clearKor, pendingKodFilter, clearPendingKodFilter, pendingKorFilter, clearPendingKorFilter, firmaProfile, sortType, setSortType } = useStore()
+  const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, korCodes, korMatched, addKorCodes, removeKorCode, clearKor, pendingKodFilter, clearPendingKodFilter, firmaProfile, sortType, setSortType } = useStore()
   const printRef = useRef()
   const locked = session.durum === 'Tamamlandı'
 
@@ -45,18 +45,6 @@ export default function RedbullKorSayim({ onNavigate }) {
       clearPendingKodFilter()
     }
   }, [pendingKodFilter])
-
-  // Raf Listesi'nden aktarılan koridor/adres filtresini uygula
-  useEffect(() => {
-    if (!pendingKorFilter) return
-    if (pendingKorFilter.filterDurum)   setFilterDurum(pendingKorFilter.filterDurum)
-    if (pendingKorFilter.filterBina)    setFilterBina(pendingKorFilter.filterBina)
-    if (pendingKorFilter.filterKoridor) setFilterKoridor(pendingKorFilter.filterKoridor)
-    if (pendingKorFilter.filterSutun)   setFilterSutun(pendingKorFilter.filterSutun)
-    if (pendingKorFilter.filterSira)    setFilterSira(pendingKorFilter.filterSira)
-    if (pendingKorFilter.filterKat)     setFilterKat(pendingKorFilter.filterKat)
-    clearPendingKorFilter()
-  }, [pendingKorFilter])
 
   function toggleSistem() {
     const next = !hideSistem

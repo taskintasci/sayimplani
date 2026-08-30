@@ -41,7 +41,7 @@ const DIMS_RB = [
 const filterKey = k => `filter${k[0].toUpperCase()}${k.slice(1)}`
 
 export default function RafListesi({ onNavigate }) {
-  const { rows, rowsLoading, korCodes, addKorCodes, setPendingKorFilter, firmaProfile } = useStore()
+  const { rows, rowsLoading, koridorlar, addKoridorlar, firmaProfile } = useStore()
   const isWms31   = firmaProfile?.sablon === SABLON.WMS31
   const isRedbull = firmaProfile?.sablon === SABLON.WMS_REDBULL
 
@@ -99,9 +99,9 @@ export default function RafListesi({ onNavigate }) {
       lokasyonSayisi: g.adresSet.size,
       kalemSayisi: g.kalemSayisi,
       miktar: g.miktar,
-      inKor: [...g.skuSet].some(k => korCodes.includes(k)),
+      inSayim: koridorlar.includes(g.key),
     }))
-  }, [filteredRows, parseFn, groupKey, korCodes])
+  }, [filteredRows, parseFn, groupKey, koridorlar])
 
   const toplamKalem = useMemo(() => groups.reduce((n, g) => n + g.kalemSayisi, 0), [groups])
 
@@ -152,30 +152,14 @@ export default function RafListesi({ onNavigate }) {
   const filtreAktif = !!search.trim() || filterDurum.length > 0 || DIMS.some(d => dim[d.key]?.length)
   function temizle() { setSearch(''); setFilterDurum([]); setDim({}) }
 
+  // Seçili koridorları Koridor Sayımı'na aktarır. SKU koduna hiç dokunulmaz —
+  // sayım ekseni doğrudan koridor olduğu için yalnız o koridorlardaki satırlar
+  // sayıma/analize/rapora girer (kör sayımın SKU bazlı davranışının aksine).
   function handleAktar() {
     if (selected.size === 0) return
-    const kodSet = new Set()
-    filteredRows.forEach(r => {
-      const key = parseFn(r.adres)[groupKey]
-      if (key && selected.has(key) && r.kod) kodSet.add(r.kod)
-    })
-    if (kodSet.size === 0) return
-    addKorCodes([...kodSet])
-
-    // Aktif filtreleri kör sayım sayfasına taşı: grup boyutu = seçili koridorlar,
-    // diğer boyutlar YALNIZ doluysa (boş dizi taşımak kör sayım sayfasındaki
-    // mevcut filtreyi sıfırlardı — tüketen effect'te boş dizi de truthy).
-    const carry = {}
-    if (filterDurum.length) carry.filterDurum = [...filterDurum]
-    DIMS.forEach(d => {
-      if (d.key === groupKey) return
-      if (dim[d.key]?.length) carry[filterKey(d.key)] = [...dim[d.key]]
-    })
-    carry[isRedbull ? 'filterKoridor' : 'filterRaf'] = [...selected]
-    setPendingKorFilter(carry)
-
+    addKoridorlar([...selected])
     setSelected(new Set())
-    onNavigate(isWms31 ? 'antrepokor' : isRedbull ? 'redbullkor' : 'kor')
+    onNavigate(isWms31 ? 'antrepokoridorsayim' : isRedbull ? 'redbullkoridorsayim' : 'koridorsayim')
   }
 
   return (
@@ -195,8 +179,8 @@ export default function RafListesi({ onNavigate }) {
             disabled={selected.size === 0}
             className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[12.5px] font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
           >
-            <span className="ms" style={{ fontSize: 16 }}>visibility_off</span>
-            Kör Sayıma Aktar{selected.size > 0 ? ` (${selected.size})` : ''}
+            <span className="ms" style={{ fontSize: 16 }}>view_week</span>
+            Koridor Sayımına Aktar{selected.size > 0 ? ` (${selected.size})` : ''}
           </button>
         </div>
 
@@ -277,9 +261,9 @@ export default function RafListesi({ onNavigate }) {
                     </td>
                     <td className="px-3 py-2 mono font-medium text-blue-700">
                       {g.key}
-                      {g.inKor && (
+                      {g.inSayim && (
                         <span className="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[10px] font-semibold align-middle">
-                          Kör sayımda
+                          Sayımda
                         </span>
                       )}
                     </td>

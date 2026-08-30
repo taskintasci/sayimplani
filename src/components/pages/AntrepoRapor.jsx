@@ -15,12 +15,13 @@ function AntrepoDurumBadge({ durum }) {
 const EMPTY_FORM = { kod: '', ad: '', adres: '', parti: '', miktar: '', birim: '', not: '' }
 
 export default function AntrepoRapor({ onNavigate }) {
-  const { rows, results, session, setPendingKodFilter, approveSession, manualRows, addManualRow, removeManualRow, korManualRows, removeKorManualRow, resultsLoading, userRole, firmaProfile, skuMasterdata, lokasyonlar } = useStore(
+  const { rows, results, session, setPendingKodFilter, approveSession, manualRows, addManualRow, removeManualRow, korManualRows, removeKorManualRow, koridorManualRows, removeKoridorManualRow, resultsLoading, userRole, firmaProfile, skuMasterdata, lokasyonlar } = useStore(
     useShallow(s => ({
       rows: s.rows, results: s.results, session: s.session,
       setPendingKodFilter: s.setPendingKodFilter, approveSession: s.approveSession,
       manualRows: s.manualRows, addManualRow: s.addManualRow, removeManualRow: s.removeManualRow,
       korManualRows: s.korManualRows, removeKorManualRow: s.removeKorManualRow,
+      koridorManualRows: s.koridorManualRows, removeKoridorManualRow: s.removeKoridorManualRow,
       resultsLoading: s.resultsLoading, userRole: s.userRole, firmaProfile: s.firmaProfile,
       skuMasterdata: s.skuMasterdata, lokasyonlar: s.lokasyonlar,
     }))
@@ -28,6 +29,7 @@ export default function AntrepoRapor({ onNavigate }) {
   const allManualRows = [
     ...manualRows.map(r => ({ ...r, _kaya: 'stok' })),
     ...korManualRows.map(r => ({ ...r, _kaya: 'kor' })),
+    ...koridorManualRows.map(r => ({ ...r, _kaya: 'koridor' })),
   ]
   const locked = session.durum === 'Tamamlandı'
 
@@ -41,6 +43,7 @@ export default function AntrepoRapor({ onNavigate }) {
   function handleRemoveManual(row) {
     if (!window.confirm(`"${row.kod}" kalemini silmek istediğinize emin misiniz?`)) return
     if (row._kaya === 'kor') removeKorManualRow(row.id)
+    else if (row._kaya === 'koridor') removeKoridorManualRow(row.id)
     else removeManualRow(row.id)
   }
 
@@ -420,6 +423,8 @@ export default function AntrepoRapor({ onNavigate }) {
                     <td className="px-3 py-1.5">
                       {row._kaya === 'kor'
                         ? <span className="badge bg-violet-100 text-violet-700 text-[10px]">Kör</span>
+                        : row._kaya === 'koridor'
+                        ? <span className="badge bg-teal-100 text-teal-700 text-[10px]">Koridor</span>
                         : <span className="badge bg-slate-100 text-slate-600 text-[10px]">Stok</span>}
                     </td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.parti || '—'}</td>

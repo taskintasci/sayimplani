@@ -1,48 +1,38 @@
 import { useState, useMemo } from 'react'
 import useStore from '../../store/useStore'
-import { exportRaporFarklar } from '../../utils/excelExport'
-import { useShallow } from 'zustand/react/shallow'
+import { exportAntrepoRaporFarklar } from '../../utils/excelExport'
 import ComboBox from '../shared/ComboBox'
 
-const EMPTY_FORM = { kod: '', ad: '', adres: '', parti: '', durum: '', miktar: '', birim: '', not: '' }
+function AntrepoDurumBadge({ durum }) {
+  if (durum === 'Normal') return <span className="badge badge-normal">{durum}</span>
+  if (durum === 'Bloke')  return <span className="badge badge-bloke">{durum}</span>
+  if (durum === 'Özel')   return <span className="badge" style={{ background: '#ede9fe', color: '#5b21b6' }}>{durum}</span>
+  if (durum === 'Kalite') return <span className="badge" style={{ background: '#dbeafe', color: '#1e40af' }}>{durum}</span>
+  return <span className="badge badge-normal">{durum || '—'}</span>
+}
 
-export default function Rapor({ onNavigate }) {
-  const { rows, results, session, setPendingKodFilter, approveSession, manualRows, addManualRow, removeManualRow, korManualRows, removeKorManualRow, koridorManualRows, removeKoridorManualRow, resultsLoading, userRole, firmaProfile, skuMasterdata, lokasyonlar } = useStore(
-    useShallow(s => ({
-      rows: s.rows, results: s.results, session: s.session,
-      setPendingKodFilter: s.setPendingKodFilter, approveSession: s.approveSession,
-      manualRows: s.manualRows, addManualRow: s.addManualRow, removeManualRow: s.removeManualRow,
-      korManualRows: s.korManualRows, removeKorManualRow: s.removeKorManualRow,
-      koridorManualRows: s.koridorManualRows, removeKoridorManualRow: s.removeKoridorManualRow,
-      resultsLoading: s.resultsLoading, userRole: s.userRole, firmaProfile: s.firmaProfile,
-      skuMasterdata: s.skuMasterdata, lokasyonlar: s.lokasyonlar,
-    }))
-  )
-  const allManualRows = [
-    ...manualRows.map(r => ({ ...r, _kaya: 'stok' })),
-    ...korManualRows.map(r => ({ ...r, _kaya: 'kor' })),
-    ...koridorManualRows.map(r => ({ ...r, _kaya: 'koridor' })),
-  ]
+const EMPTY_FORM = { kod: '', ad: '', adres: '', parti: '', miktar: '', birim: '', not: '' }
+
+export default function AntrepoKoridorSayimRapor({ onNavigate }) {
+  const { koridorMatched, results, session, setPendingKodFilter, koridorManualRows, addKoridorManualRow, removeKoridorManualRow, firmaProfile, userRole, skuMasterdata, lokasyonlar } = useStore()
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [onlyBigDiff, setOnlyBigDiff] = useState(false)
+
+  const rows = koridorMatched
   const locked = session.durum === 'Tamamlandı'
 
   // Bir farklılık satırının kodu manuel eklenen kalemlerde de varsa
   // (aynı ürün başka bir yerde fazla bulunup manuel girilmiş olabilir) —
   // eksik/fazla birbirini tamamlıyor olabilir, önce buna bakılmalı.
   function manuelVarMi(kod) {
-    return allManualRows.some(r => r.kod?.toUpperCase() === kod?.toUpperCase())
+    return koridorManualRows.some(r => r.kod?.toUpperCase() === kod?.toUpperCase())
   }
 
   function handleRemoveManual(row) {
     if (!window.confirm(`"${row.kod}" kalemini silmek istediğinize emin misiniz?`)) return
-    if (row._kaya === 'kor') removeKorManualRow(row.id)
-    else if (row._kaya === 'koridor') removeKoridorManualRow(row.id)
-    else removeManualRow(row.id)
+    removeKoridorManualRow(row.id)
   }
-
-  const [approving, setApproving] = useState(false)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [onlyBigDiff, setOnlyBigDiff] = useState(false)
 
   const skuOptions = useMemo(
     () => skuMasterdata.map(s => ({ value: s.kod, label: s.ad ? `${s.kod} — ${s.ad}` : s.kod })),
@@ -61,42 +51,15 @@ export default function Rapor({ onNavigate }) {
     setForm(f => ({ ...f, kod: sku.kod, ad: sku.ad, birim: sku.birim }))
   }
 
-  if (resultsLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 py-24 text-slate-400">
-        <span className="ms animate-spin" style={{ fontSize: 36 }}>progress_activity</span>
-        <p className="text-[13px]">Sayım verileri yükleniyor…</p>
-      </div>
-    )
-  }
-
-  async function handleApprove() {
-    const counted = rows.filter(r => results[r.id]?.miktar !== undefined && results[r.id]?.miktar !== '')
-    if (counted.length === 0 && allManualRows.length === 0) {
-      alert('Henüz sayım yapılmamış. Onaylamak için en az bir kalem sayılmış olmalı.')
-      return
-    }
-    const ok = window.confirm(
-      `${counted.length} sayılan kalem "Onaylandı" olarak işaretlenecek ve sayım tamamlanacak.\n\nDevam edilsin mi?`
-    )
-    if (!ok) return
-    setApproving(true)
-    try {
-      await approveSession()
-    } finally {
-      setApproving(false)
-    }
-  }
-
   function handleAddManual(e) {
     e.preventDefault()
     if (!matchedSku || form.miktar === '' || !adresGecerli) return
-    addManualRow({
+    addKoridorManualRow({
       kod:    matchedSku.kod,
       ad:     matchedSku.ad,
       adres:  form.adres.trim(),
       parti:  form.parti.trim(),
-      durum:  form.durum.trim(),
+      durum:  '',
       miktar: form.miktar,
       birim:  matchedSku.birim,
       not:    form.not.trim(),
@@ -115,7 +78,6 @@ export default function Rapor({ onNavigate }) {
       ...r,
       sayilan: results[r.id]?.miktar,
       fark: Number(results[r.id]?.miktar) - Number(String(r.sayim).replace(',', '.')),
-      not: results[r.id]?.notlar || '',
     }))
 
   const visibleDiscrepancies = onlyBigDiff
@@ -125,14 +87,31 @@ export default function Rapor({ onNavigate }) {
       })
     : discrepancies
 
-  const pct = rows.length ? Math.round((counted.length / rows.length) * 100) : 0
+  if (rows.length === 0) {
+    return (
+      <div className="flex flex-col gap-5">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">{firmaProfile?.unvan || firmaProfile?.ad || 'WMS Antrepo'} Koridor Stok Sayım Raporu</h1>
+          <p className="text-[13px] text-slate-500 mt-0.5">Koridor sayım listesi henüz oluşturulmadı</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <span className="ms text-slate-300 mb-3 block" style={{ fontSize: 48 }}>summarize</span>
+          <div className="text-[14px] font-semibold text-slate-700 mb-1">Rapor Oluşturulamadı</div>
+          <div className="text-[13px] text-slate-400 mb-4">Önce Raf Listesi'nden koridor seçip Koridor Sayımı'na aktarın</div>
+          <button onClick={() => onNavigate('antrepokoridorsayim')} className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700">
+            <span className="ms" style={{ fontSize: 16 }}>view_week</span> Koridor Sayımı Sayfasına Git
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-5 print-content">
       {/* Başlık */}
       <div className="flex flex-wrap items-center justify-between gap-y-2">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">{firmaProfile?.unvan || firmaProfile?.ad || ''} Mutabakat Raporu</h1>
+          <h1 className="text-xl font-bold text-slate-900">{firmaProfile?.unvan || firmaProfile?.ad || 'WMS Antrepo'} Koridor Stok Sayım Raporu</h1>
           <p className="text-[13px] text-slate-500 mt-0.5">Onaydan önce tüm farklılıkları inceleyin</p>
         </div>
         <div className="flex flex-wrap gap-2 no-print">
@@ -140,28 +119,11 @@ export default function Rapor({ onNavigate }) {
             <span className="ms" style={{ fontSize: 16 }}>print</span> Yazdır
           </button>
           <button
-            onClick={() => exportRaporFarklar(discrepancies, session, manualRows, firmaProfile)}
+            onClick={() => exportAntrepoRaporFarklar(discrepancies, session, koridorManualRows, firmaProfile)}
             className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 rounded-lg text-[13px] font-medium text-slate-700 hover:bg-slate-50"
           >
             <span className="ms" style={{ fontSize: 16 }}>download</span> Excel İndir
           </button>
-          {(userRole === 'yonetici' || userRole === 'superadmin') && (
-            session.durum === 'Tamamlandı' ? (
-              <div className="flex items-center gap-1.5 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg text-[13px] font-bold">
-                <span className="ms" style={{ fontSize: 16 }}>check_circle</span> Onaylandı
-              </div>
-            ) : (
-              <button
-                onClick={handleApprove}
-                disabled={approving || session.durum !== 'Mutabakat Bekliyor'}
-                title={session.durum !== 'Mutabakat Bekliyor' ? 'Onaylamak için önce Panel\'den "Sayımı Bitir"' : undefined}
-                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-[13px] font-bold hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-600"
-              >
-                <span className="ms" style={{ fontSize: 16 }}>{approving ? 'hourglass_empty' : 'check_circle'}</span>
-                {approving ? 'Onaylanıyor…' : 'Onayla'}
-              </button>
-            )
-          )}
         </div>
       </div>
 
@@ -193,7 +155,7 @@ export default function Rapor({ onNavigate }) {
           <div className="text-[14px] font-semibold text-slate-700">Farklılık bulunamadı</div>
           <div className="text-[13px] text-slate-400 mt-1">
             {counted.length === 0
-              ? 'Henüz sayım yapılmamış. Stok Sayımı sayfasından başlayın.'
+              ? 'Henüz sayım yapılmamış. Koridor Stok Sayımı sayfasından başlayın.'
               : 'Tüm sayılan kalemler sistem miktarıyla eşleşiyor.'}
           </div>
         </div>
@@ -214,16 +176,14 @@ export default function Rapor({ onNavigate }) {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-[11px] mono text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                  <th className="px-3 py-1.5">Kod / Ad</th>
-                  <th className="px-3 py-1.5">Parti</th>
-                  <th className="px-3 py-1.5">Kategori</th>
+                  <th className="px-3 py-1.5">Stok Kodu / Adı</th>
+                  <th className="px-3 py-1.5">Beyanname</th>
                   <th className="px-3 py-1.5">Durum</th>
                   <th className="px-3 py-1.5">Adres</th>
-                  <th className="px-3 py-1.5 text-right">Sistem</th>
+                  <th className="px-3 py-1.5 text-right">Depo Kalan Stok</th>
                   <th className="px-3 py-1.5 text-right">Sayılan</th>
                   <th className="px-3 py-1.5 text-right">Fark</th>
-                  <th className="px-3 py-1.5">Not</th>
-                  <th className="px-3 py-1.5 text-center no-print">İşlem</th>
+                  <th className="px-3 py-1.5 text-center">İşlem</th>
                 </tr>
               </thead>
               <tbody className="text-[12.5px] divide-y divide-slate-50">
@@ -234,8 +194,7 @@ export default function Rapor({ onNavigate }) {
                       <p className="text-slate-700">{row.ad}</p>
                     </td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.parti || '—'}</td>
-                    <td className="px-3 py-1.5 text-[12px] text-slate-500">{row.kategori || '—'}</td>
-                    <td className="px-3 py-1.5 text-[12px] text-slate-500">{row.durum || '—'}</td>
+                    <td className="px-3 py-1.5"><AntrepoDurumBadge durum={row.durum} /></td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.adres}</td>
                     <td className="px-3 py-1.5 text-right mono font-medium">
                       {row.sayim} <span className="text-slate-400 text-[11px]">{row.birim}</span>
@@ -246,8 +205,7 @@ export default function Rapor({ onNavigate }) {
                     <td className={`px-3 py-1.5 text-right mono font-bold ${row.fark > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {row.fark > 0 ? '+' : ''}{row.fark.toLocaleString('tr', { maximumFractionDigits: 2 })} <span className="opacity-60 text-[11px]">{row.birim}</span>
                     </td>
-                    <td className="px-3 py-1.5 text-[12px] text-slate-500">{row.not || '—'}</td>
-                    <td className="px-3 py-1.5 text-center no-print">
+                    <td className="px-3 py-1.5 text-center">
                       {manuelVarMi(row.kod) && (
                         <div className="mb-1">
                           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-semibold whitespace-nowrap">
@@ -256,7 +214,7 @@ export default function Rapor({ onNavigate }) {
                         </div>
                       )}
                       <button
-                        onClick={() => { setPendingKodFilter(row.kod); onNavigate('sayim') }}
+                        onClick={() => { setPendingKodFilter(row.kod); onNavigate('antrepokoridorsayim') }}
                         className="text-[12px] text-blue-600 hover:underline font-medium"
                       >İncele</button>
                     </td>
@@ -275,7 +233,7 @@ export default function Rapor({ onNavigate }) {
             <span className="ms text-amber-600" style={{ fontSize: 18 }}>add_box</span>
             <p className="text-[13px] font-semibold text-amber-900">
               Sistemde Bulunmayan Kalemler
-              {allManualRows.length > 0 && <span className="badge bg-amber-100 text-amber-700 ml-2">{allManualRows.length}</span>}
+              {koridorManualRows.length > 0 && <span className="badge bg-amber-100 text-amber-700 ml-2">{koridorManualRows.length}</span>}
             </p>
           </div>
           {userRole !== 'kontrolcu' && !locked && (
@@ -292,7 +250,7 @@ export default function Rapor({ onNavigate }) {
         {/* Ekleme Formu */}
         {showForm && (
           <form onSubmit={handleAddManual} className="px-4 py-3 border-b border-amber-100 bg-amber-50/40 no-print flex flex-col gap-2">
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               <div>
                 <label className="block text-[11px] text-slate-500 mb-1">Stok Kodu *</label>
                 <ComboBox
@@ -305,7 +263,7 @@ export default function Rapor({ onNavigate }) {
                 />
               </div>
               <div className="col-span-2">
-                <label className="block text-[11px] text-slate-500 mb-1">Ürün Adı</label>
+                <label className="block text-[11px] text-slate-500 mb-1">Stok Adı</label>
                 <input
                   type="text"
                   value={form.ad}
@@ -322,28 +280,18 @@ export default function Rapor({ onNavigate }) {
                   onChange={text => setForm(f => ({ ...f, adres: text }))}
                   onSelect={opt => setForm(f => ({ ...f, adres: opt.value }))}
                   options={lokasyonOptions}
-                  placeholder="A-01-1-1 (opsiyonel)"
+                  placeholder="1-S-05-5 (opsiyonel)"
                   invalid={form.adres.trim() !== '' && !adresGecerli}
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-slate-500 mb-1">Parti</label>
+                <label className="block text-[11px] text-slate-500 mb-1">Beyanname</label>
                 <input
                   type="text"
                   value={form.parti}
                   onChange={e => setForm(f => ({ ...f, parti: e.target.value }))}
-                  placeholder="PT240101"
+                  placeholder="26410500AN..."
                   className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] text-slate-500 mb-1">Durum</label>
-                <input
-                  type="text"
-                  value={form.durum}
-                  onChange={e => setForm(f => ({ ...f, durum: e.target.value }))}
-                  placeholder="Serbest / KK..."
-                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                 />
               </div>
             </div>
@@ -392,8 +340,8 @@ export default function Rapor({ onNavigate }) {
           </form>
         )}
 
-        {/* Manuel kayıt listesi — stok + kör sayım manuel kalemleri */}
-        {allManualRows.length === 0 ? (
+        {/* Manuel kayıt listesi */}
+        {koridorManualRows.length === 0 ? (
           <div className="px-4 py-6 text-center text-[12.5px] text-slate-400">
             Sistemde bulunmayan ürün eklemek için "Manuel Ekle" butonunu kullanın.
           </div>
@@ -402,11 +350,10 @@ export default function Rapor({ onNavigate }) {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 text-[11px] mono text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                  <th className="px-3 py-1.5">Kod / Ad</th>
-                  <th className="px-3 py-1.5">Kaynak</th>
-                  <th className="px-3 py-1.5">Parti</th>
+                  <th className="px-3 py-1.5">Stok Kodu / Adı</th>
+                  <th className="px-3 py-1.5">Beyanname</th>
                   <th className="px-3 py-1.5">Adres</th>
-                  <th className="px-3 py-1.5 text-right">Sistem</th>
+                  <th className="px-3 py-1.5 text-right">Depo Kalan Stok</th>
                   <th className="px-3 py-1.5 text-right">Sayılan</th>
                   <th className="px-3 py-1.5 text-right">Fark</th>
                   <th className="px-3 py-1.5">Not</th>
@@ -414,18 +361,11 @@ export default function Rapor({ onNavigate }) {
                 </tr>
               </thead>
               <tbody className="text-[12.5px] divide-y divide-slate-50">
-                {allManualRows.map((row, i) => (
+                {koridorManualRows.map((row, i) => (
                   <tr key={row.id} className={i % 2 === 1 ? 'bg-amber-50/30' : ''}>
                     <td className="px-3 py-1.5">
                       <p className="mono font-semibold text-amber-700 text-[11px]">{row.kod}</p>
                       <p className="text-slate-700">{row.ad || <span className="text-slate-400 italic">—</span>}</p>
-                    </td>
-                    <td className="px-3 py-1.5">
-                      {row._kaya === 'kor'
-                        ? <span className="badge bg-violet-100 text-violet-700 text-[10px]">Kör</span>
-                        : row._kaya === 'koridor'
-                        ? <span className="badge bg-teal-100 text-teal-700 text-[10px]">Koridor</span>
-                        : <span className="badge bg-slate-100 text-slate-600 text-[10px]">Stok</span>}
                     </td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.parti || '—'}</td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.adres || '—'}</td>

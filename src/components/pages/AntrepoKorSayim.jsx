@@ -16,7 +16,7 @@ function AntrepoDurumBadge({ durum }) {
 }
 
 export default function AntrepoKorSayim({ onNavigate }) {
-  const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, korCodes, korMatched, addKorCodes, removeKorCode, clearKor, pendingKodFilter, clearPendingKodFilter, pendingKorFilter, clearPendingKorFilter, firmaProfile, sortType, setSortType } = useStore()
+  const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, korCodes, korMatched, addKorCodes, removeKorCode, clearKor, pendingKodFilter, clearPendingKodFilter, firmaProfile, sortType, setSortType } = useStore()
   const printRef = useRef()
   const locked = session.durum === 'Tamamlandı'
 
@@ -44,17 +44,6 @@ export default function AntrepoKorSayim({ onNavigate }) {
       clearPendingKodFilter()
     }
   }, [pendingKodFilter])
-
-  // Raf Listesi'nden aktarılan koridor/adres filtresini uygula
-  useEffect(() => {
-    if (!pendingKorFilter) return
-    if (pendingKorFilter.filterDurum) setFilterDurum(pendingKorFilter.filterDurum)
-    if (pendingKorFilter.filterRaf)   setFilterRaf(pendingKorFilter.filterRaf)
-    if (pendingKorFilter.filterSira)  setFilterSira(pendingKorFilter.filterSira)
-    if (pendingKorFilter.filterKolon) setFilterKolon(pendingKorFilter.filterKolon)
-    if (pendingKorFilter.filterGoz)   setFilterGoz(pendingKorFilter.filterGoz)
-    clearPendingKorFilter()
-  }, [pendingKorFilter])
 
   function toggleSistem() {
     const next = !hideSistem

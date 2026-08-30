@@ -1,3 +1,5 @@
+import { SABLON } from '../constants'
+
 const FILTRE_ETIKETLERI = {
   filterSearch:   'Ara',
   filterDurum:    'Durum',
@@ -39,6 +41,20 @@ export function buildFiltreOzeti(filters) {
 export function parseAdres(adres) {
   const parts = String(adres || '').split('-')
   return { raf: parts[0] || '', sira: parts[1] || '', kolon: parts[2] || '', goz: parts[3] || '' }
+}
+
+/**
+ * Bir adresin ait olduğu koridor anahtarı. Koridor Sayımı ailesinin (ve Raf
+ * Listesi'nin) gruplama/eşleştirme birimi — şablona göre adresin farklı
+ * parçasından okunur:
+ *   LOS Depo / WMS Antrepo → 4 parçalı `Raf-Sıra-Kolon-Göz`      → 1. parça
+ *   WMS Depo               → 5 parçalı `Bina-Koridor-Sutun-Sıra-Kat` → 2. parça
+ * (Ortak sözlükte her ikisi de "Koridor" olarak gösterilir, bkz. FILTRE_ETIKETLERI.)
+ */
+export function getKoridor(adres, sablon) {
+  return sablon === SABLON.WMS_REDBULL
+    ? parseAdresRedbull(adres).koridor
+    : parseAdres(adres).raf
 }
 
 const URUN_TIPI_MAP = { A: 'Ambalaj', M: 'Mamul', H: 'Hammadde', Y: 'Yardımcı Madde', N: 'Numune' }

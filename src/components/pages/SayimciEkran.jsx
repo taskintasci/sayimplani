@@ -172,6 +172,7 @@ export default function SayimciEkran({ mode = 'self' }) {
     gorevler, gorevlerLoading, loadMyGorevler, loadSessionGorevler, updateGorevDurum, deleteGorev,
     activeSessionId, rows, rowsLoading, results, updateResult,
     manualRows, addManualRow, korManualRows, addKorManualRow,
+    koridorManualRows, addKoridorManualRow,
     sortType, setSortType, skuMasterdata, lokasyonlar, session,
   } = useStore()
 
@@ -204,8 +205,9 @@ export default function SayimciEkran({ mode = 'self' }) {
 
   const isMembran = gorev?.sayimTipi === 'membran'
   const isKor     = gorev?.sayimTipi === 'kor' || gorev?.sayimTipi === 'antrepokor' || gorev?.sayimTipi === 'redbullkor'
-  const isAntrepo = gorev?.sayimTipi === 'antrepo' || gorev?.sayimTipi === 'antrepokor'
-  const isRedbull = gorev?.sayimTipi === 'redbull' || gorev?.sayimTipi === 'redbullkor'
+  const isKoridor = gorev?.sayimTipi === 'koridor' || gorev?.sayimTipi === 'antrepokoridor' || gorev?.sayimTipi === 'redbullkoridor'
+  const isAntrepo = gorev?.sayimTipi === 'antrepo' || gorev?.sayimTipi === 'antrepokor' || gorev?.sayimTipi === 'antrepokoridor'
+  const isRedbull = gorev?.sayimTipi === 'redbull' || gorev?.sayimTipi === 'redbullkor' || gorev?.sayimTipi === 'redbullkoridor'
 
   const atanan = useMemo(() => {
     if (!gorev) return []
@@ -352,8 +354,8 @@ export default function SayimciEkran({ mode = 'self' }) {
     ilerle()
   }
 
-  const manuelAddFn  = isKor ? addKorManualRow : addManualRow
-  const manuelRows   = isKor ? korManualRows    : manualRows
+  const manuelAddFn  = isKoridor ? addKoridorManualRow : isKor ? addKorManualRow : addManualRow
+  const manuelRows   = isKoridor ? koridorManualRows    : isKor ? korManualRows    : manualRows
 
   // ─── GÖREV LİSTESİ ───────────────────────────────────────────────────────
   if (view === 'gorevler') {
@@ -478,10 +480,13 @@ export default function SayimciEkran({ mode = 'self' }) {
                                 {g.sayimTipi === 'kor' && (
                                   <span className="ms text-amber-500 ml-1" style={{ fontSize: 16 }}>visibility_off</span>
                                 )}
-                                {(g.sayimTipi === 'antrepo' || g.sayimTipi === 'antrepokor') && (
+                                {['koridor', 'antrepokoridor', 'redbullkoridor'].includes(g.sayimTipi) && (
+                                  <span className="ms text-teal-600 ml-1" style={{ fontSize: 16 }}>view_week</span>
+                                )}
+                                {(g.sayimTipi === 'antrepo' || g.sayimTipi === 'antrepokor' || g.sayimTipi === 'antrepokoridor') && (
                                   <span className="ms text-blue-500 ml-1" style={{ fontSize: 16 }}>qr_code_scanner</span>
                                 )}
-                                {(g.sayimTipi === 'redbull' || g.sayimTipi === 'redbullkor') && (
+                                {(g.sayimTipi === 'redbull' || g.sayimTipi === 'redbullkor' || g.sayimTipi === 'redbullkoridor') && (
                                   <span className="ms text-orange-500 ml-1" style={{ fontSize: 16 }}>local_shipping</span>
                                 )}
                               </div>
@@ -746,7 +751,7 @@ export default function SayimciEkran({ mode = 'self' }) {
         </div>
 
         {!locked && manuelOpen && (
-          <ManuelModal onClose={() => setManuelOpen(false)} addManualRow={manuelAddFn} manualRows={manuelRows} isKor={isKor} isRedbull={isRedbull} skuMasterdata={skuMasterdata} lokasyonlar={lokasyonlar} rows={atanan} />
+          <ManuelModal onClose={() => setManuelOpen(false)} addManualRow={manuelAddFn} manualRows={manuelRows} isKor={isKor} isKoridor={isKoridor} isRedbull={isRedbull} skuMasterdata={skuMasterdata} lokasyonlar={lokasyonlar} rows={atanan} />
         )}
       </div>
     )
@@ -845,6 +850,7 @@ export default function SayimciEkran({ mode = 'self' }) {
             addManualRow={manuelAddFn}
             manualRows={manuelRows}
             isKor={isKor}
+            isKoridor={isKoridor}
             isRedbull={isRedbull}
             skuMasterdata={skuMasterdata}
             lokasyonlar={lokasyonlar}
@@ -988,7 +994,7 @@ function DurumRozet({ durum }) {
 
 const MANUEL_BOS = { kod: '', ad: '', adres: '', parti: '', sscc: '', durum: '', miktar: '', birim: '', not: '' }
 
-function ManuelModal({ onClose, addManualRow, manualRows, isKor, isRedbull, skuMasterdata, lokasyonlar, rows }) {
+function ManuelModal({ onClose, addManualRow, manualRows, isKor, isKoridor, isRedbull, skuMasterdata, lokasyonlar, rows }) {
   const [form, setForm] = useState(MANUEL_BOS)
 
   // Arka plan sayfası kaydırılabilir kaldıkça mobilde bir input'a dokununca
@@ -1074,7 +1080,9 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isRedbull, skuM
           <h3 className="text-slate-900 font-bold text-lg flex items-center gap-2">
             <span className="ms text-amber-500" style={{ fontSize: 22 }}>add_box</span>
             Manuel Fazla Stok
-            {isKor && <span className="text-xs font-normal text-amber-700 ml-1">(Kör Sayım)</span>}
+            {isKoridor
+              ? <span className="text-xs font-normal text-teal-700 ml-1">(Koridor Sayımı)</span>
+              : isKor && <span className="text-xs font-normal text-amber-700 ml-1">(Kör Sayım)</span>}
           </h3>
           <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 shrink-0">
             <span className="ms" style={{ fontSize: 20 }}>close</span>
@@ -1082,7 +1090,7 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isRedbull, skuM
         </div>
         <p className="text-slate-500 text-xs mb-4">
           Sistemde bulunmayan ürün.
-          {isKor ? ' Kör sayım raporu' : ' Stok sayım raporu'}'ndaki manuel listeye eklenir.
+          {isKoridor ? ' Koridor sayım raporu' : isKor ? ' Kör sayım raporu' : ' Stok sayım raporu'}'ndaki manuel listeye eklenir.
         </p>
         <form onSubmit={kaydet} className="flex flex-col gap-3">
           <div>

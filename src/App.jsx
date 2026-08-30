@@ -35,6 +35,13 @@ const RedbullSayim        = lazy(() => import('./components/pages/RedbullSayim')
 const RedbullRapor        = lazy(() => import('./components/pages/RedbullRapor'))
 const RedbullKorSayim     = lazy(() => import('./components/pages/RedbullKorSayim'))
 const RedbullKorSayimRapor = lazy(() => import('./components/pages/RedbullKorSayimRapor'))
+const KoridorSayim             = lazy(() => import('./components/pages/KoridorSayim'))
+const AntrepoKoridorSayim      = lazy(() => import('./components/pages/AntrepoKoridorSayim'))
+const RedbullKoridorSayim      = lazy(() => import('./components/pages/RedbullKoridorSayim'))
+const KoridorSayimAnalizi      = lazy(() => import('./components/pages/KoridorSayimAnalizi'))
+const KoridorSayimRapor        = lazy(() => import('./components/pages/KoridorSayimRapor'))
+const AntrepoKoridorSayimRapor = lazy(() => import('./components/pages/AntrepoKoridorSayimRapor'))
+const RedbullKoridorSayimRapor = lazy(() => import('./components/pages/RedbullKoridorSayimRapor'))
 
 // Oturum seçilmeden de erişilebilen sayfalar (Sidebar/TopBar kabuğu içinde)
 const SESSIONLESS = ['giris', 'ayarlar']
@@ -56,6 +63,9 @@ const PAGES = {
   kor:       { Component: KorSayim,         fullHeight: true,  roles: YON, sablon: [SABLON.STANDART] },
   koranaliz: { Component: KorSayimAnalizi,  fullHeight: false, roles: YON_KONT, sablon: [SABLON.STANDART] },
   korrapor:      { Component: KorSayimRapor,      fullHeight: false, roles: YON_KONT, sablon: [SABLON.STANDART] },
+  koridorsayim:  { Component: KoridorSayim,        fullHeight: true,  roles: YON,      sablon: [SABLON.STANDART] },
+  koridoranaliz: { Component: KoridorSayimAnalizi, fullHeight: false, roles: YON_KONT, sablon: [SABLON.STANDART] },
+  koridorrapor:  { Component: KoridorSayimRapor,   fullHeight: false, roles: YON_KONT, sablon: [SABLON.STANDART] },
   hareketlilik:  { Component: HareketlilikSayim,  fullHeight: true,  roles: YON, sablon: [SABLON.STANDART] },
   membran:       { Component: MembranSayim,       fullHeight: true,  roles: YON, sablon: [SABLON.STANDART] },
   ayarlar:       { Component: Ayarlar,            fullHeight: false, roles: YON_KONT },
@@ -69,6 +79,9 @@ const PAGES = {
   antrepokor:       { Component: AntrepoKorSayim,      fullHeight: true,  roles: YON, sablon: [SABLON.WMS31] },
   antrepokoranaliz: { Component: KorSayimAnalizi,      fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS31] },
   antrepokorrapor:  { Component: AntrepoKorSayimRapor, fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS31] },
+  antrepokoridorsayim:  { Component: AntrepoKoridorSayim,      fullHeight: true,  roles: YON,      sablon: [SABLON.WMS31] },
+  antrepokoridoranaliz: { Component: KoridorSayimAnalizi,      fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS31] },
+  antrepokoridorrapor:  { Component: AntrepoKoridorSayimRapor, fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS31] },
   redbullpanel:     { Component: RedbullPanel,         fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
   redbullsayim:     { Component: RedbullSayim,         fullHeight: true,  roles: YON, sablon: [SABLON.WMS_REDBULL] },
   redbullanaliz:    { Component: SayimAnalizi,         fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
@@ -78,6 +91,9 @@ const PAGES = {
   redbullkor:       { Component: RedbullKorSayim,      fullHeight: true,  roles: YON, sablon: [SABLON.WMS_REDBULL] },
   redbullkoranaliz: { Component: KorSayimAnalizi,      fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
   redbullkorrapor:  { Component: RedbullKorSayimRapor, fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  redbullkoridorsayim:  { Component: RedbullKoridorSayim,      fullHeight: true,  roles: YON,      sablon: [SABLON.WMS_REDBULL] },
+  redbullkoridoranaliz: { Component: KoridorSayimAnalizi,      fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  redbullkoridorrapor:  { Component: RedbullKoridorSayimRapor, fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
 }
 
 function ErisimYok() {

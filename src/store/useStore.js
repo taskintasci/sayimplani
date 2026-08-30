@@ -15,6 +15,7 @@ import {
   uploadSkuMasterdata, downloadSkuMasterdata,
   uploadLokasyonlar, downloadLokasyonlar,
 } from '../firebase/rowStorage'
+import { getKoridor } from '../utils/adresUtils'
 
 // ─── Dev-only error logger — prod'da hassas hata detayı loglanmaz ─────────
 const devErr = (msg, err) => { if (import.meta.env.DEV) console.error(msg, err) }
@@ -111,9 +112,9 @@ const useStore = create((set, get) => ({
         rows: [], importFormat: null, rowsLoading: false,
         results: {}, resultsLoading: false,
         korCodes: [], korMatched: [],
-        manualRows: [], korManualRows: [],
+        koridorlar: [], koridorMatched: [],
+        manualRows: [], korManualRows: [], koridorManualRows: [],
         pendingKodFilter: null,
-        pendingKorFilter: null,
         events: [],
         session: {
           type: 'Yıl Sonu Sayımı', depoAdi: '',
@@ -190,8 +191,8 @@ const useStore = create((set, get) => ({
     set({
       activeFirma: firmaId, firmaProfile: firmaDoc || null,
       activeSessionId: null, session: null,
-      rows: [], results: {}, korCodes: [], korMatched: [],
-      manualRows: [], korManualRows: [], pendingKorFilter: null, rowsLoading: false, resultsLoading: false,
+      rows: [], results: {}, korCodes: [], korMatched: [], koridorlar: [], koridorMatched: [],
+      manualRows: [], korManualRows: [], koridorManualRows: [], rowsLoading: false, resultsLoading: false,
     })
     await Promise.all([get().loadSessions(), get().loadFirmaMasterdata(firmaId)])
   },
@@ -305,7 +306,7 @@ const useStore = create((set, get) => ({
       sessionType:  session.type || '',
       depoAdi:      session.depoAdi || '',
       atananRows,                       // array<rowId>
-      sayimTipi:    sayimTipi || 'stok', // 'stok' | 'kor' | 'hareketlilik' | 'membran' | 'antrepo' | 'antrepokor'
+      sayimTipi:    sayimTipi || 'stok', // 'stok' | 'kor' | 'koridor' | 'hareketlilik' | 'membran' | 'antrepo' | 'antrepokor' | 'antrepokoridor' | 'redbull' | 'redbullkor' | 'redbullkoridor'
       filtreOzeti:  filtreOzeti || '',   // görev atanırken aktif filtrelerin okunabilir özeti (ör. "Koridor: A, B")
       firma:        activeFirma,
       durum:        'bekliyor',
@@ -430,25 +431,25 @@ const useStore = create((set, get) => ({
   sortType: '1',
   setSortType: (v) => set({ sortType: v }),
 
-  // ── Kör Sayım listesi ─────────────────────────────────────────────────────
+  // ── Kör Sayım listesi (SKU kodu bazlı) ────────────────────────────────────
   korCodes: [],
   korMatched: [],
+
+  // ── Koridor Sayımı listesi (ADRES bazlı) ──────────────────────────────────
+  // Kör sayımdan farkı: seçim birimi SKU kodu değil koridor. Bu yüzden bir
+  // kodun seçili koridor DIŞINDAKİ lokasyonları listeye/analize/rapora girmez.
+  koridorlar: [],
+  koridorMatched: [],
 
   // ── Manuel eklenen kalemler (sistemde olmayan) ────────────────────────────
   manualRows: [],
   korManualRows: [],
+  koridorManualRows: [],
 
   // ── Navigation filter ──────────────────────────────────────────────────────
   pendingKodFilter: null,
   setPendingKodFilter: (kod) => set({ pendingKodFilter: kod }),
   clearPendingKodFilter: () => set({ pendingKodFilter: null }),
-
-  // Raf Listesi → Kör Sayım geçişinde taşınan çok-değerli adres filtresi.
-  // Ör. { filterRaf: ['A12','A13'] } veya Redbull'da { filterKoridor: [...] }.
-  // Hedef kör sayım sayfası mount'ta okuyup ilgili MultiSelect'lere yazar ve temizler.
-  pendingKorFilter: null,
-  setPendingKorFilter: (obj) => set({ pendingKorFilter: obj }),
-  clearPendingKorFilter: () => set({ pendingKorFilter: null }),
 
   // ── Toast bildirimi (sayfa altında, ~3 sn) ────────────────────────────────
   // Kalıcı "Son İşlemler" logundan (addEvent) ayrıdır: bu sadece anlık bir
@@ -483,11 +484,11 @@ const useStore = create((set, get) => ({
     stopSessionListeners()
 
     if (!id) {
-      set({ activeSessionId: null, rows: [], results: {}, korCodes: [], korMatched: [], manualRows: [], korManualRows: [], pendingKorFilter: null, rowsLoading: false, resultsLoading: false, session: null })
+      set({ activeSessionId: null, rows: [], results: {}, korCodes: [], korMatched: [], koridorlar: [], koridorMatched: [], manualRows: [], korManualRows: [], koridorManualRows: [], rowsLoading: false, resultsLoading: false, session: null })
       return
     }
 
-    set({ activeSessionId: id, rows: [], results: {}, korCodes: [], korMatched: [], manualRows: [], korManualRows: [], pendingKorFilter: null, rowsLoading: true, resultsLoading: true })
+    set({ activeSessionId: id, rows: [], results: {}, korCodes: [], korMatched: [], koridorlar: [], koridorMatched: [], manualRows: [], korManualRows: [], koridorManualRows: [], rowsLoading: true, resultsLoading: true })
 
     // Sayımcı rolünde loadSessions hiç çağrılmaz; yerel listede yoksa doğrudan Firestore'dan çek
     let sessionData = get().sessions.find(s => s.id === id)
@@ -516,9 +517,17 @@ const useStore = create((set, get) => ({
         const rows = await downloadRows(id)
         const korCodes = sessionData.korCodes || []
         const korMatched = korCodes.length > 0 ? rows.filter(r => korCodes.includes(r.kod)) : []
-        const manualRows    = sessionData.manualRows    || []
-        const korManualRows = sessionData.korManualRows || []
-        set({ rows, korCodes, korMatched, manualRows, korManualRows })
+        // Koridor Sayımı adres bazlıdır: kodun tüm lokasyonları değil, YALNIZ
+        // seçili koridorlardaki satırlar eşleşir (bkz. getKoridor).
+        const sablon = get().firmaProfile?.sablon
+        const koridorlar = sessionData.koridorlar || []
+        const koridorMatched = koridorlar.length > 0
+          ? rows.filter(r => koridorlar.includes(getKoridor(r.adres, sablon)))
+          : []
+        const manualRows        = sessionData.manualRows        || []
+        const korManualRows     = sessionData.korManualRows     || []
+        const koridorManualRows = sessionData.koridorManualRows || []
+        set({ rows, korCodes, korMatched, koridorlar, koridorMatched, manualRows, korManualRows, koridorManualRows })
         get().addEvent({
           icon: 'inventory_2',
           text: `Oturum açıldı: ${sessionData.type || 'Sayım'}`,
@@ -576,12 +585,19 @@ const useStore = create((set, get) => ({
         if (!snap.exists()) return
         const d = snap.data()
         set(state => {
-          const korCodes = d.korCodes || []
+          const korCodes   = d.korCodes   || []
+          const koridorlar = d.koridorlar || []
+          const sablon     = state.firmaProfile?.sablon
           const next = {
-            manualRows:    d.manualRows    || [],
-            korManualRows: d.korManualRows || [],
+            manualRows:        d.manualRows        || [],
+            korManualRows:     d.korManualRows     || [],
+            koridorManualRows: d.koridorManualRows || [],
             korCodes,
             korMatched:    korCodes.length > 0 ? state.rows.filter(r => korCodes.includes(r.kod)) : [],
+            koridorlar,
+            koridorMatched: koridorlar.length > 0
+              ? state.rows.filter(r => koridorlar.includes(getKoridor(r.adres, sablon)))
+              : [],
             session: state.session ? {
               ...state.session,
               durum: d.durum || state.session.durum,
@@ -627,9 +643,11 @@ const useStore = create((set, get) => ({
       results:       {},
       korCodes:      [],
       korMatched:    [],
+      koridorlar:    [],
+      koridorMatched: [],
       manualRows:    [],
       korManualRows: [],
-      pendingKorFilter: null,
+      koridorManualRows: [],
       session: {
         type:         data.type,
         depoAdi:      data.depoAdi,
@@ -812,6 +830,38 @@ const useStore = create((set, get) => ({
       updateDoc(doc(db, 'sessions', activeSessionId), { korCodes: [] }).catch(e => devErr('korCodes temizleme hatası:', e))
   },
 
+  // ── Koridor Sayımı aksiyonları ────────────────────────────────────────────
+  // korCodes üçlüsünün adres bazlı eşi. Eşleştirme getKoridor() üzerinden
+  // şablona duyarlı yapılır; bu yüzden her yeniden hesaplamada firmaProfile
+  // okunur (LOS Depo/WMS Antrepo'da adresin 1., WMS Depo'da 2. parçası).
+  addKoridorlar: (newKeys) => {
+    const state   = get()
+    const temiz   = newKeys.map(k => String(k).trim()).filter(Boolean)
+    const merged  = [...new Set([...state.koridorlar, ...temiz])]
+    const sablon  = state.firmaProfile?.sablon
+    const matched = state.rows.filter(r => merged.includes(getKoridor(r.adres, sablon)))
+    set({ koridorlar: merged, koridorMatched: matched })
+    if (state.activeSessionId && temiz.length > 0)
+      updateDoc(doc(db, 'sessions', state.activeSessionId), { koridorlar: arrayUnion(...temiz) })
+        .catch(e => devErr('koridorlar güncelleme hatası:', e))
+  },
+  removeKoridor: (key) => {
+    const state   = get()
+    const updated = state.koridorlar.filter(k => k !== key)
+    const sablon  = state.firmaProfile?.sablon
+    const matched = state.rows.filter(r => updated.includes(getKoridor(r.adres, sablon)))
+    set({ koridorlar: updated, koridorMatched: matched })
+    if (state.activeSessionId)
+      updateDoc(doc(db, 'sessions', state.activeSessionId), { koridorlar: arrayRemove(key) })
+        .catch(e => devErr('koridorlar güncelleme hatası:', e))
+  },
+  clearKoridor: () => {
+    const { activeSessionId } = get()
+    set({ koridorlar: [], koridorMatched: [] })
+    if (activeSessionId)
+      updateDoc(doc(db, 'sessions', activeSessionId), { koridorlar: [] }).catch(e => devErr('koridorlar temizleme hatası:', e))
+  },
+
   // Sayım bitince yönetici/süper yönetici Panel'den bu aksiyonu tetikler —
   // 'Devam' → 'Mutabakat Bekliyor'. Sayımcılar teknik olarak bu durumdan
   // sonra da satır girebiliyor (kasıtlı: sert bir kilit istenmedi), ama
@@ -961,6 +1011,40 @@ const useStore = create((set, get) => ({
     }
   },
 
+  addKoridorManualRow: (row) => {
+    const { activeSessionId, koridorManualRows } = get()
+    const newRow = { ...row, id: manualId('koridormanual') }
+    set({ koridorManualRows: [...koridorManualRows, newRow] })
+    get().showToast(`Manuel stok eklendi: ${newRow.kod}`)
+    if (activeSessionId) {
+      updateDoc(doc(db, 'sessions', activeSessionId), {
+        koridorManualRows: arrayUnion(newRow),
+        updatedAt: serverTimestamp(),
+      }).catch(err => {
+        devErr('Koridor manuel satır kaydedilemedi:', err)
+        set(state => ({ koridorManualRows: state.koridorManualRows.filter(r => r.id !== newRow.id) }))
+        window.alert(`"${newRow.kod}" manuel kalemi kaydedilemedi, satır geri alındı. Lütfen tekrar deneyin.`)
+      })
+    }
+  },
+
+  removeKoridorManualRow: (id) => {
+    const { activeSessionId, koridorManualRows } = get()
+    const target = koridorManualRows.find(r => r.id === id)
+    if (!target) return
+    set({ koridorManualRows: koridorManualRows.filter(r => r.id !== id) })
+    if (activeSessionId) {
+      updateDoc(doc(db, 'sessions', activeSessionId), {
+        koridorManualRows: arrayRemove(target),
+        updatedAt: serverTimestamp(),
+      }).catch(err => {
+        devErr('Koridor manuel satır silinemedi:', err)
+        set(state => ({ koridorManualRows: [...state.koridorManualRows, target] }))
+        window.alert(`"${target.kod}" manuel kalemi silinemedi. Lütfen tekrar deneyin.`)
+      })
+    }
+  },
+
   deleteSession: async (id) => {
     // Alt koleksiyonlar (sayimciGorevler) Firestore'da oturumla birlikte
     // otomatik silinmez — önce onları temizle, yoksa sayımcıda öksüz görev kalır
@@ -991,7 +1075,7 @@ const useStore = create((set, get) => ({
 
   reset: () => {
     stopSessionListeners()
-    set({ rows: [], results: {}, korCodes: [], korMatched: [], pendingKorFilter: null })
+    set({ rows: [], results: {}, korCodes: [], korMatched: [], koridorlar: [], koridorMatched: [] })
   },
 }))
 

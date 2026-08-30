@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import useStore from '../../store/useStore'
-import { sortRows, computeFilterOptions, parseAdres, getUrunTipi, buildFiltreOzeti } from '../../utils/adresUtils'
+import { sortRows, computeFilterOptions, parseAdres, getUrunTipi, buildFiltreOzeti, getKoridor } from '../../utils/adresUtils'
 import { exportResults } from '../../utils/excelExport'
 import PrintSheet from '../print/PrintSheet'
 import MultiSelect from '../shared/MultiSelect'
@@ -18,13 +18,14 @@ function DurumBadge({ durum }) {
   )
 }
 
-export default function KorSayim({ onNavigate }) {
-  const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, korCodes, korMatched, addKorCodes, removeKorCode, clearKor, pendingKodFilter, clearPendingKodFilter, firmaProfile, sortType, setSortType } = useStore()
+export default function KoridorSayim({ onNavigate }) {
+  const { rows, results, session, updateResult, fillFromSistem, clearMiktarlar, koridorlar, koridorMatched, addKoridorlar, removeKoridor, clearKoridor, pendingKodFilter, clearPendingKodFilter, firmaProfile, sortType, setSortType } = useStore()
   const printRef = useRef()
   const locked = session.durum === 'Tamamlandı'
 
-  const [codeInput, setCodeInput]     = useState('')
-  const [hideSistem, setHideSistem]   = useState(false)
+  // Koridor sayımı kör modda yapılır: sistem miktarı baştan gizli, üstteki
+  // "Sistemi Göster" ile açılabilir.
+  const [hideSistem, setHideSistem]   = useState(true)
   const [hideSayilan, setHideSayilan] = useState(false)
   const [filterSearch, setFilterSearch] = useState('')
   const [filterDurum, setFilterDurum] = useState([])
@@ -40,6 +41,11 @@ export default function KorSayim({ onNavigate }) {
   const [gorevModal, setGorevModal]   = useState(false)
 
   const handlePrint = useReactToPrint({ contentRef: printRef })
+
+  // hideSistem başlangıçta true — global 'hide-sistem' sınıfını mount'ta da uygula
+  useEffect(() => {
+    document.body.classList.toggle('hide-sistem', hideSistem)
+  }, [])
 
   useEffect(() => {
     if (pendingKodFilter) {
@@ -59,27 +65,31 @@ export default function KorSayim({ onNavigate }) {
     document.body.classList.toggle('hide-sayilan', next)
   }
 
-  function handleEkle() {
-    const codes = codeInput.split(/[\s,;\n]+/).map(c => c.trim()).filter(Boolean)
-    if (codes.length === 0) return
-    addKorCodes(codes)
-    setCodeInput('')
-  }
-
-  const codeNameMap = useMemo(() => {
+  // Oturumdaki tüm koridorlar (sayım listesine eklenebilecek adaylar) ve her
+  // birinin kaç kalem içerdiği — çiplerde ve ekleme listesinde gösterilir.
+  const sablon = firmaProfile?.sablon
+  const koridorSayilari = useMemo(() => {
     const map = {}
-    rows.forEach(r => { if (!map[r.kod]) map[r.kod] = r.ad })
+    rows.forEach(r => {
+      const k = getKoridor(r.adres, sablon)
+      if (k) map[k] = (map[k] || 0) + 1
+    })
     return map
-  }, [rows])
+  }, [rows, sablon])
+
+  const tumKoridorlar = useMemo(
+    () => Object.keys(koridorSayilari).sort((a, b) => a.localeCompare(b, 'tr', { numeric: true })),
+    [koridorSayilari]
+  )
 
   const filterOptions = useMemo(
-    () => computeFilterOptions(korMatched, { filterSearch, filterDurum, filterKategori, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz }),
-    [korMatched, filterSearch, filterDurum, filterKategori, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz]
+    () => computeFilterOptions(koridorMatched, { filterSearch, filterDurum, filterKategori, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz }),
+    [koridorMatched, filterSearch, filterDurum, filterKategori, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz]
   )
 
   const filteredBase = useMemo(() => {
     const q = filterSearch.trim().toLowerCase()
-    let result = korMatched.filter(r => {
+    let result = koridorMatched.filter(r => {
       if (q && !(
         r.kod?.toLowerCase().includes(q) ||
         r.ad?.toLowerCase().includes(q) ||
@@ -96,7 +106,7 @@ export default function KorSayim({ onNavigate }) {
       return true
     })
     return sortRows(result, sortType)
-  }, [korMatched, filterSearch, filterDurum, filterKategori, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz, sortType])
+  }, [koridorMatched, filterSearch, filterDurum, filterKategori, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz, sortType])
 
   const filtered = useMemo(() => {
     if (!onlyDiff) return filteredBase
@@ -108,7 +118,7 @@ export default function KorSayim({ onNavigate }) {
 
   // Sayaçlar aktif filtreye (filteredBase) göre — Raf Listesi'nden bir koridor
   // seçilip aktarıldığında üstteki Sayılan/Farklılık/Bekliyor yalnız o koridoru
-  // yansıtsın (korMatched, kodun filtre dışı diğer lokasyonlarını da içerir).
+  // yansıtsın (koridorMatched, kodun filtre dışı diğer lokasyonlarını da içerir).
   const counted   = useMemo(() => filteredBase.filter(r => results[r.id]?.miktar !== undefined && results[r.id]?.miktar !== ''), [filteredBase, results])
   const diffCount = useMemo(() => filteredBase.filter(r => { const m = results[r.id]?.miktar; return m !== undefined && m !== '' && String(m) !== String(r.sayim) }).length, [filteredBase, results])
   const waiting   = filteredBase.length - counted.length
@@ -131,11 +141,11 @@ export default function KorSayim({ onNavigate }) {
         {/* Satır 1: Başlık + Aksiyon */}
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h1 className="text-[15px] font-bold text-slate-900">Kör Stok Sayımı</h1>
+            <h1 className="text-[15px] font-bold text-slate-900">Koridor Stok Sayımı</h1>
             <p className="text-[11.5px] text-slate-400 mono">
               {filteredBase.length > 0
                 ? `${filteredBase.length.toLocaleString('tr')} kalem · %${Math.round(counted.length / filteredBase.length * 100)} sayıldı${diffCount > 0 ? ` · ${diffCount} fark` : ''}`
-                : korCodes.length > 0 ? 'Filtreye uyan kalem yok' : 'Kod ekleyerek kör sayım listesi oluşturun'}
+                : koridorlar.length > 0 ? 'Filtreye uyan kalem yok' : 'Raf Listesi\'nden veya aşağıdan koridor seçin'}
             </p>
           </div>
           <div className="flex items-center gap-2 no-print">
@@ -160,57 +170,51 @@ export default function KorSayim({ onNavigate }) {
                 </button>
               )
             })()}
-            {!locked && korCodes.length > 0 && (
-              <button onClick={clearKor} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-[12.5px] font-medium hover:bg-red-100">
+            {!locked && koridorlar.length > 0 && (
+              <button onClick={clearKoridor} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-[12.5px] font-medium hover:bg-red-100">
                 <span className="ms" style={{ fontSize: 15 }}>delete_sweep</span> Temizle
               </button>
             )}
           </div>
         </div>
 
-        {/* Satır 2: Kod ekleme */}
+        {/* Satır 2: Koridor ekleme — asıl giriş noktası Raf Listesi, bu seçici
+            sayfadan ayrılmadan koridor eklemek için */}
         {!locked && (
         <div className="flex items-center gap-2 mb-2">
-          <div className="flex-1 relative">
-            <span className="ms absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" style={{ fontSize: 15 }}>qr_code_scanner</span>
-            <input
-              type="text"
-              value={codeInput}
-              onChange={e => setCodeInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleEkle()}
-              placeholder="Stok kodu girin veya yapıştırın (boşluk, virgül, satır ile ayırın)…"
-              className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-[12.5px] mono focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-          <button
-            onClick={handleEkle}
-            disabled={rows.length === 0 || !codeInput.trim()}
-            className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white rounded-lg text-[12.5px] font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
-          >
-            <span className="ms" style={{ fontSize: 15 }}>add</span> Ekle
-          </button>
+          <span className="text-[11.5px] text-slate-400 font-medium">Koridor Ekle:</span>
+          <MultiSelect
+            placeholder={tumKoridorlar.length > 0 ? 'Koridor seçin…' : 'Önce Excel yükleyin'}
+            options={tumKoridorlar.filter(k => !koridorlar.includes(k))}
+            value={[]}
+            onChange={secilen => { if (secilen.length > 0) addKoridorlar(secilen) }}
+            style={{ borderColor: '#93c5fd' }}
+          />
+          <span className="text-[11px] text-slate-400">
+            Toplu seçim için <button onClick={() => onNavigate('rafliste')} className="text-blue-600 hover:underline font-medium">Raf Listesi</button>
+          </span>
         </div>
         )}
 
-        {/* Satır 3: Eklenen kodlar chip listesi */}
-        {korCodes.length > 0 && (
+        {/* Satır 3: Seçili koridor chip listesi */}
+        {koridorlar.length > 0 && (
           <div className="mb-2">
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-[11px] text-slate-400 mono uppercase tracking-wide">Seçili SKU</span>
+              <span className="text-[11px] text-slate-400 mono uppercase tracking-wide">Seçili Koridor</span>
               <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold mono min-w-[20px]">
-                {korCodes.length}
+                {koridorlar.length}
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5 max-h-[84px] overflow-y-auto">
-              {korCodes.map(code => {
-                const adName  = codeNameMap[code]
-                const notFound = !adName
+              {koridorlar.map(k => {
+                const adet = koridorSayilari[k]
+                const notFound = !adet
                 return (
-                  <div key={code} className={`flex items-center gap-1.5 pl-2 pr-1 py-0.5 rounded-md border text-[11.5px] ${notFound ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-blue-50 border-blue-200 text-blue-900'}`}>
-                    <span className="mono font-semibold">{code}</span>
-                    {adName && <><span className="text-slate-300">·</span><span className="text-slate-500 max-w-[160px] truncate">{adName}</span></>}
-                    {notFound && <span className="text-amber-500 text-[10px]">bulunamadı</span>}
-                    <button onClick={() => removeKorCode(code)} className="ml-0.5 flex items-center justify-center w-4 h-4 rounded hover:bg-red-100 text-slate-400 hover:text-red-500 transition-colors">
+                  <div key={k} className={`flex items-center gap-1.5 pl-2 pr-1 py-0.5 rounded-md border text-[11.5px] ${notFound ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-blue-50 border-blue-200 text-blue-900'}`}>
+                    <span className="mono font-semibold">{k}</span>
+                    {adet ? <><span className="text-slate-300">·</span><span className="text-slate-500">{adet.toLocaleString('tr')} kalem</span></> : null}
+                    {notFound && <span className="text-amber-500 text-[10px]">bu oturumda yok</span>}
+                    <button onClick={() => removeKoridor(k)} className="ml-0.5 flex items-center justify-center w-4 h-4 rounded hover:bg-red-100 text-slate-400 hover:text-red-500 transition-colors">
                       <span className="ms" style={{ fontSize: 13 }}>close</span>
                     </button>
                   </div>
@@ -287,19 +291,19 @@ export default function KorSayim({ onNavigate }) {
       </div>
 
       {/* ── Tablo ── */}
-      {korCodes.length === 0 ? (
+      {koridorlar.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center bg-slate-50">
           <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-sm">
-            <span className="ms text-slate-300" style={{ fontSize: 32 }}>visibility_off</span>
+            <span className="ms text-slate-300" style={{ fontSize: 32 }}>view_week</span>
           </div>
-          <div className="text-slate-600 font-semibold text-sm mb-1">Kör Sayım Başlatılmadı</div>
-          <div className="text-slate-400 text-[13px]">Yukarıya stok kodlarını girin ve Ekle'ye tıklayın</div>
+          <div className="text-slate-600 font-semibold text-sm mb-1">Koridor Sayımı Başlatılmadı</div>
+          <div className="text-slate-400 text-[13px]">Yukarıdan koridor seçin veya Raf Listesi'nden toplu aktarın</div>
         </div>
-      ) : korMatched.length === 0 ? (
+      ) : koridorMatched.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center bg-slate-50">
           <span className="ms text-slate-300 mb-3" style={{ fontSize: 40 }}>search_off</span>
           <div className="text-slate-500 font-semibold text-sm">Eşleşen kayıt bulunamadı</div>
-          <div className="text-slate-400 text-xs mt-1">Kodları kontrol edin veya yeni kod ekleyin</div>
+          <div className="text-slate-400 text-xs mt-1">Seçili koridorlarda bu oturuma ait satır yok</div>
         </div>
       ) : (
         <div className="flex-1 overflow-auto">
@@ -370,14 +374,14 @@ export default function KorSayim({ onNavigate }) {
               })}
             </tbody>
           </table>
-          {filtered.length === 0 && korMatched.length > 0 && (
+          {filtered.length === 0 && koridorMatched.length > 0 && (
             <div className="p-8 text-center text-[11.5px] text-slate-400">Filtreye uyan kayıt yok.</div>
           )}
         </div>
       )}
 
       {/* ── Alt bar ── */}
-      {korMatched.length > 0 && (
+      {koridorMatched.length > 0 && (
         <div className="px-5 py-2 bg-white border-t border-slate-200 flex items-center justify-between shrink-0 no-print">
           <div className="flex items-center gap-2 text-[11.5px] text-slate-400">
             <span className="ms text-emerald-400" style={{ fontSize: 14 }}>cloud_done</span>
@@ -437,7 +441,7 @@ export default function KorSayim({ onNavigate }) {
             >
               <span className="ms" style={{ fontSize: 15 }}>assignment_ind</span> Sayımcıya Gönder
             </button>
-            <button onClick={() => exportResults(korMatched, results, session, firmaProfile)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[12.5px] font-medium text-slate-700 hover:bg-slate-50">
+            <button onClick={() => exportResults(koridorMatched, results, session, firmaProfile)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[12.5px] font-medium text-slate-700 hover:bg-slate-50">
               <span className="ms" style={{ fontSize: 15 }}>download</span> Excel'e Aktar
             </button>
             <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[12.5px] font-medium text-slate-700 hover:bg-slate-50">
@@ -448,14 +452,14 @@ export default function KorSayim({ onNavigate }) {
       )}
 
       <div className="hidden">
-        <PrintSheet ref={printRef} rows={filtered} results={results} session={session} mode="kor" hideSistem={hideSistem} hideSayilan={hideSayilan} sayimTuru="Kör Sayım" firmaUnvani={firmaProfile?.unvan} />
+        <PrintSheet ref={printRef} rows={filtered} results={results} session={session} mode="kor" hideSistem={hideSistem} hideSayilan={hideSayilan} sayimTuru="Koridor Sayımı" firmaUnvani={firmaProfile?.unvan} />
       </div>
 
       {gorevModal && (
         <GorevAtaModal
           rows={filtered}
           onClose={() => setGorevModal(false)}
-          sayimTipi="kor"
+          sayimTipi="koridor"
           filtreOzeti={buildFiltreOzeti({ filterSearch, filterDurum, filterKategori, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz })}
         />
       )}

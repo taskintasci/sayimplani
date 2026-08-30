@@ -14,6 +14,9 @@ const PAGE_NAMES = {
   ayarlar: 'Ayarlar',
   koranaliz: 'Kör Sayım Analizi',
   korrapor: 'Kör Sayım Raporu',
+  koridorsayim: 'Koridor Stok Sayımı',
+  koridoranaliz: 'Koridor Stok Sayım Analizi',
+  koridorrapor: 'Koridor Stok Sayım Raporu',
   hareketlilik: 'Hareketlilik Sayımı',
   membran: 'Membran Sayımı',
   sayimciekran: 'Sayımcı Ekranı',
@@ -26,6 +29,9 @@ const PAGE_NAMES = {
   antrepokor: 'Kör Sayım',
   antrepokoranaliz: 'Kör Sayım Analizi',
   antrepokorrapor: 'Kör Sayım Raporu',
+  antrepokoridorsayim: 'Koridor Stok Sayımı',
+  antrepokoridoranaliz: 'Koridor Stok Sayım Analizi',
+  antrepokoridorrapor: 'Koridor Stok Sayım Raporu',
   redbullpanel: 'Panel',
   redbullsayim: 'Tüm Stok Sayımı',
   redbullanaliz: 'Sayım Analizi',
@@ -35,6 +41,9 @@ const PAGE_NAMES = {
   redbullkor: 'Kör Sayım',
   redbullkoranaliz: 'Kör Sayım Analizi',
   redbullkorrapor: 'Kör Sayım Raporu',
+  redbullkoridorsayim: 'Koridor Stok Sayımı',
+  redbullkoridoranaliz: 'Koridor Stok Sayım Analizi',
+  redbullkoridorrapor: 'Koridor Stok Sayım Raporu',
 }
 
 export default function TopBar({ activePage, onMenu }) {
