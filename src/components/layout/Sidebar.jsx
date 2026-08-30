@@ -23,61 +23,77 @@ function NavBtn({ item, activePage, onNavigate }) {
 }
 
 function Divider() {
-  return <div className="my-1.5 border-t border-slate-100" />
+  return <div className="my-2 border-t border-slate-300" />
 }
 
 const YON      = ['yonetici', 'superadmin']
 const YON_KONT = ['yonetici', 'kontrolcu', 'superadmin']
 
 // Menü öğeleri — her birinin hangi rollere ve hangi firma şablonuna
-// görüneceği tanımlı. sablon belirtilmemişse şablondan bağımsız (paylaşılan).
+// görüneceği tanımlı. Her şablon bloğu kendi Panel + Sayımcı Ekranı ile
+// başlar; ayraçlar da şablona bağlı ki başka şablon filtrelenince ortada
+// asılı kalmasın (baştaki/ardışık/sondaki ayraçlar ayrıca temizleniyor).
 const MENU = [
-  { id: 'panel',        icon: 'grid_view',      label: 'Panel',                   roles: YON_KONT, sablon: [SABLON.STANDART] },
-  { divider: true,      roles: YON_KONT },
-  { id: 'sayim',        icon: 'fact_check',     label: 'Tüm Stok Sayımı',         roles: YON, sablon: [SABLON.STANDART] },
-  { id: 'analiz',       icon: 'monitoring',     label: 'Tüm Stok Sayım Analizi',  roles: YON_KONT, sablon: [SABLON.STANDART] },
-  { id: 'rapor',        icon: 'analytics',      label: 'Tüm Stok Rapor',          roles: YON_KONT, sablon: [SABLON.STANDART] },
-  { divider: true,      roles: YON_KONT },
-  { id: 'skuliste',     icon: 'checklist',      label: 'SKU Listesi',             roles: YON, sablon: [SABLON.STANDART] },
-  { id: 'rafliste',     icon: 'shelves',        label: 'Raf Listesi',             roles: YON, sablon: [SABLON.STANDART] },
-  { id: 'kor',          icon: 'visibility_off', label: 'Kör Stok Sayımı',         roles: YON, sablon: [SABLON.STANDART] },
-  { id: 'koranaliz',    icon: 'query_stats',    label: 'Kör Stok Sayım Analizi',  roles: YON_KONT, sablon: [SABLON.STANDART] },
-  { id: 'korrapor',     icon: 'summarize',      label: 'Kör Stok Sayım Raporu',   roles: YON_KONT, sablon: [SABLON.STANDART] },
-  { divider: true,      roles: YON },
-  { id: 'koridorsayim',  icon: 'view_week',     label: 'Koridor Stok Sayımı',        roles: YON,      sablon: [SABLON.STANDART] },
-  { id: 'koridoranaliz', icon: 'query_stats',   label: 'Koridor Stok Sayım Analizi', roles: YON_KONT, sablon: [SABLON.STANDART] },
-  { id: 'koridorrapor',  icon: 'summarize',     label: 'Koridor Stok Sayım Raporu',  roles: YON_KONT, sablon: [SABLON.STANDART] },
-  { divider: true,      roles: YON },
-  { id: 'hareketlilik', icon: 'trending_up',    label: 'Hareketlilik Sayımı',     roles: YON, sablon: [SABLON.STANDART] },
-  { id: 'membran',      icon: 'layers',         label: 'Membran Sayımı',          roles: YON, sablon: [SABLON.STANDART] },
-  { divider: true,      roles: YON_KONT },
-  { id: 'antrepopanel',     icon: 'grid_view',       label: 'Panel',                  roles: YON_KONT, sablon: [SABLON.WMS31] },
-  { id: 'antreposayim',     icon: 'fact_check',      label: 'Stok Sayımı',            roles: YON, sablon: [SABLON.WMS31] },
-  { id: 'antrepoanaliz',    icon: 'monitoring',      label: 'Sayım Analizi',          roles: YON_KONT, sablon: [SABLON.WMS31] },
-  { id: 'antreporapor',     icon: 'analytics',       label: 'Sayım Raporu',           roles: YON_KONT, sablon: [SABLON.WMS31] },
-  { id: 'antreposkuliste',  icon: 'checklist',       label: 'SKU Listesi',            roles: YON, sablon: [SABLON.WMS31] },
-  { id: 'antreporafliste',  icon: 'shelves',         label: 'Raf Listesi',           roles: YON, sablon: [SABLON.WMS31] },
-  { id: 'antrepokor',       icon: 'visibility_off',  label: 'Kör Sayımı',             roles: YON, sablon: [SABLON.WMS31] },
-  { id: 'antrepokoranaliz', icon: 'query_stats',     label: 'Kör Sayım Analizi',      roles: YON_KONT, sablon: [SABLON.WMS31] },
-  { id: 'antrepokorrapor',  icon: 'summarize',       label: 'Kör Sayım Raporu',       roles: YON_KONT, sablon: [SABLON.WMS31] },
-  { id: 'antrepokoridorsayim',  icon: 'view_week',   label: 'Koridor Stok Sayımı',        roles: YON,      sablon: [SABLON.WMS31] },
-  { id: 'antrepokoridoranaliz', icon: 'query_stats', label: 'Koridor Stok Sayım Analizi', roles: YON_KONT, sablon: [SABLON.WMS31] },
-  { id: 'antrepokoridorrapor',  icon: 'summarize',   label: 'Koridor Stok Sayım Raporu',  roles: YON_KONT, sablon: [SABLON.WMS31] },
-  { divider: true,      roles: YON_KONT },
-  { id: 'redbullpanel',     icon: 'grid_view',       label: 'Panel',                  roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullsayim',     icon: 'fact_check',      label: 'Tüm Stok Sayımı',        roles: YON, sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullanaliz',    icon: 'monitoring',      label: 'Sayım Analizi',          roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullrapor',     icon: 'analytics',       label: 'Sayım Raporu',           roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullskuliste',  icon: 'checklist',       label: 'SKU Listesi',            roles: YON, sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullrafliste',  icon: 'shelves',         label: 'Raf Listesi',           roles: YON, sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullkor',       icon: 'visibility_off',  label: 'Kör Sayım',              roles: YON, sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullkoranaliz', icon: 'query_stats',     label: 'Kör Sayım Analizi',      roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullkorrapor',  icon: 'summarize',       label: 'Kör Sayım Raporu',       roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullkoridorsayim',  icon: 'view_week',   label: 'Koridor Stok Sayımı',        roles: YON,      sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullkoridoranaliz', icon: 'query_stats', label: 'Koridor Stok Sayım Analizi', roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullkoridorrapor',  icon: 'summarize',   label: 'Koridor Stok Sayım Raporu',  roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
-  { divider: true,      roles: YON_KONT },
-  { id: 'sayimciekran', icon: 'swipe',          label: 'Sayımcı Ekranı',          roles: YON_KONT },
+  // ── LOS Depo (standart) ────────────────────────────────────────────────
+  { id: 'panel',        icon: 'grid_view',      label: 'Panel',                     roles: YON_KONT, sablon: [SABLON.STANDART] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.STANDART] },
+  { id: 'sayimciekran', icon: 'swipe',          label: 'Sayımcı Ekranı',            roles: YON_KONT, sablon: [SABLON.STANDART] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.STANDART] },
+  { id: 'sayim',        icon: 'fact_check',     label: 'Tüm Stok Sayımı',           roles: YON,      sablon: [SABLON.STANDART] },
+  { id: 'analiz',       icon: 'monitoring',     label: 'Tüm Stok Sayım Analizi',    roles: YON_KONT, sablon: [SABLON.STANDART] },
+  { id: 'rapor',        icon: 'analytics',      label: 'Tüm Stok Sayım Raporu',     roles: YON_KONT, sablon: [SABLON.STANDART] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.STANDART] },
+  { id: 'skuliste',     icon: 'checklist',      label: 'SKU Listesi',               roles: YON,      sablon: [SABLON.STANDART] },
+  { id: 'kor',          icon: 'visibility_off', label: 'Kör Stok Sayımı',           roles: YON,      sablon: [SABLON.STANDART] },
+  { id: 'koranaliz',    icon: 'query_stats',    label: 'Kör Stok Sayım Analizi',    roles: YON_KONT, sablon: [SABLON.STANDART] },
+  { id: 'korrapor',     icon: 'summarize',      label: 'Kör Stok Sayım Raporu',     roles: YON_KONT, sablon: [SABLON.STANDART] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.STANDART] },
+  { id: 'rafliste',      icon: 'shelves',       label: 'Raf Listesi',                  roles: YON,      sablon: [SABLON.STANDART] },
+  { id: 'koridorsayim',  icon: 'view_week',     label: 'Koridor Stok Sayımı',          roles: YON,      sablon: [SABLON.STANDART] },
+  { id: 'koridoranaliz', icon: 'query_stats',   label: 'Koridor Stok Sayım Analizi',   roles: YON_KONT, sablon: [SABLON.STANDART] },
+  { id: 'koridorrapor',  icon: 'summarize',     label: 'Koridor Stok Sayım Raporu',    roles: YON_KONT, sablon: [SABLON.STANDART] },
+  { divider: true,      roles: YON,             sablon: [SABLON.STANDART] },
+  { id: 'hareketlilik', icon: 'trending_up',    label: 'Hareketlilik Sayımı',       roles: YON,      sablon: [SABLON.STANDART] },
+  { divider: true,      roles: YON,             sablon: [SABLON.STANDART] },
+  { id: 'membran',      icon: 'layers',         label: 'Membran Sayımı',            roles: YON,      sablon: [SABLON.STANDART] },
+
+  // ── WMS Antrepo (wms31) ────────────────────────────────────────────────
+  { id: 'antrepopanel', icon: 'grid_view',      label: 'Panel',                     roles: YON_KONT, sablon: [SABLON.WMS31] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.WMS31] },
+  { id: 'sayimciekran', icon: 'swipe',          label: 'Sayımcı Ekranı',            roles: YON_KONT, sablon: [SABLON.WMS31] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.WMS31] },
+  { id: 'antreposayim',  icon: 'fact_check',    label: 'Stok Sayımı',               roles: YON,      sablon: [SABLON.WMS31] },
+  { id: 'antrepoanaliz', icon: 'monitoring',    label: 'Sayım Analizi',             roles: YON_KONT, sablon: [SABLON.WMS31] },
+  { id: 'antreporapor',  icon: 'analytics',     label: 'Sayım Raporu',              roles: YON_KONT, sablon: [SABLON.WMS31] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.WMS31] },
+  { id: 'antreposkuliste',  icon: 'checklist',      label: 'SKU Listesi',           roles: YON,      sablon: [SABLON.WMS31] },
+  { id: 'antrepokor',       icon: 'visibility_off', label: 'Kör Sayımı',            roles: YON,      sablon: [SABLON.WMS31] },
+  { id: 'antrepokoranaliz', icon: 'query_stats',    label: 'Kör Sayım Analizi',     roles: YON_KONT, sablon: [SABLON.WMS31] },
+  { id: 'antrepokorrapor',  icon: 'summarize',      label: 'Kör Sayım Raporu',      roles: YON_KONT, sablon: [SABLON.WMS31] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.WMS31] },
+  { id: 'antreporafliste',      icon: 'shelves',     label: 'Raf Listesi',                 roles: YON,      sablon: [SABLON.WMS31] },
+  { id: 'antrepokoridorsayim',  icon: 'view_week',   label: 'Koridor Stok Sayımı',         roles: YON,      sablon: [SABLON.WMS31] },
+  { id: 'antrepokoridoranaliz', icon: 'query_stats', label: 'Koridor Stok Sayım Analizi',  roles: YON_KONT, sablon: [SABLON.WMS31] },
+  { id: 'antrepokoridorrapor',  icon: 'summarize',   label: 'Koridor Stok Sayım Raporu',   roles: YON_KONT, sablon: [SABLON.WMS31] },
+
+  // ── WMS Depo (wms_redbull) ─────────────────────────────────────────────
+  { id: 'redbullpanel', icon: 'grid_view',      label: 'Panel',                     roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.WMS_REDBULL] },
+  { id: 'sayimciekran', icon: 'swipe',          label: 'Sayımcı Ekranı',            roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullsayim',  icon: 'fact_check',    label: 'Tüm Stok Sayımı',           roles: YON,      sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullanaliz', icon: 'monitoring',    label: 'Sayım Analizi',             roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullrapor',  icon: 'analytics',     label: 'Sayım Raporu',              roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullskuliste',  icon: 'checklist',      label: 'SKU Listesi',           roles: YON,      sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkor',       icon: 'visibility_off', label: 'Kör Sayım',             roles: YON,      sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkoranaliz', icon: 'query_stats',    label: 'Kör Sayım Analizi',     roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkorrapor',  icon: 'summarize',      label: 'Kör Sayım Raporu',      roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { divider: true,      roles: YON_KONT,        sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullrafliste',      icon: 'shelves',     label: 'Raf Listesi',                 roles: YON,      sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkoridorsayim',  icon: 'view_week',   label: 'Koridor Stok Sayımı',         roles: YON,      sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkoridoranaliz', icon: 'query_stats', label: 'Koridor Stok Sayım Analizi',  roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkoridorrapor',  icon: 'summarize',   label: 'Koridor Stok Sayım Raporu',   roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
 ]
 
 export default function Sidebar({ activePage, onNavigate, className = 'flex' }) {
@@ -95,7 +111,9 @@ export default function Sidebar({ activePage, onNavigate, className = 'flex' }) 
     onNavigate('giris')
   }
 
-  // Rol + şablon + oturum-bağımlılığı filtrelemesi, ardından ardışık/baştaki divider'ları temizle
+  // Rol + şablon + oturum-bağımlılığı filtrelemesi, ardından baştaki/ardışık/
+  // sondaki divider'ları temizle (bir şablon bloğu tamamen filtrelenince o
+  // bloğun ayracı ortada asılı kalmasın)
   const visible = MENU.filter(m =>
     m.roles.includes(userRole) &&
     (!m.sablon || !currentSablon || m.sablon.includes(currentSablon)) &&
@@ -106,6 +124,7 @@ export default function Sidebar({ activePage, onNavigate, className = 'flex' }) 
     const prev = visible[i - 1]
     return prev && !prev.divider   // baştaki ve ardışık divider'ları at
   })
+  while (cleaned.length && cleaned[cleaned.length - 1].divider) cleaned.pop()
 
   return (
     <aside className={`w-56 shrink-0 bg-white border-r border-slate-200 ${className} flex-col h-full`}>
@@ -119,7 +138,7 @@ export default function Sidebar({ activePage, onNavigate, className = 'flex' }) 
         {cleaned.map((m, i) =>
           m.divider
             ? <Divider key={'d' + i} />
-            : <NavBtn key={m.id} item={m} activePage={activePage} onNavigate={onNavigate} />
+            : <NavBtn key={m.id + i} item={m} activePage={activePage} onNavigate={onNavigate} />
         )}
       </nav>
 
