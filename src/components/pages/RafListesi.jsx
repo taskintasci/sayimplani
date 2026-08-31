@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import useStore from '../../store/useStore'
 import { SABLON } from '../../constants'
-import { parseAdres, parseAdresRedbull, computeFilterOptions, computeFilterOptionsRedbull } from '../../utils/adresUtils'
+import { parseAdres, parseAdresRedbull, computeFilterOptions, computeFilterOptionsRedbull, getKoridor, getSutun } from '../../utils/adresUtils'
 import MultiSelect from '../shared/MultiSelect'
 
 function SortHeader({ label, col, sortBy, sortDir, onSort, align, className = '' }) {
@@ -21,20 +21,20 @@ function SortHeader({ label, col, sortBy, sortDir, onSort, align, className = ''
   )
 }
 
-// Adres boyutları — iç anahtar sabit, etiketler ortak sözlüğe göre (Bkz. adresUtils).
-// 4 parçalı şema (LOS Depo / WMS Antrepo): Raf-Sıra-Kolon-Göz → ekranda Koridor/Sütun/Sıra/Kat.
+// Adres boyutları — iç anahtar = etiket (birleşik model, bkz. adresUtils).
+// 4 parça (LOS Depo / WMS Antrepo): Blok-Koridor-Sütun-Kat
 const DIMS_4 = [
-  { key: 'raf',   placeholder: 'Tüm Koridorlar', optKey: 'raflar' },
-  { key: 'sira',  placeholder: 'Tüm Sütunlar',   optKey: 'siralar' },
-  { key: 'kolon', placeholder: 'Tüm Sıralar',    optKey: 'kolonlar' },
-  { key: 'goz',   placeholder: 'Tüm Katlar',     optKey: 'gozler' },
-]
-// 5 parçalı şema (WMS Depo): Bina-Koridor-Sutun-Sıra-Kat (zaten ortak sözlükle uyumlu).
-const DIMS_RB = [
-  { key: 'bina',    placeholder: 'Tüm Binalar',    optKey: 'binalar' },
+  { key: 'blok',    placeholder: 'Tüm Bloklar',    optKey: 'bloklar' },
   { key: 'koridor', placeholder: 'Tüm Koridorlar', optKey: 'koridorlar' },
   { key: 'sutun',   placeholder: 'Tüm Sütunlar',   optKey: 'sutunlar' },
-  { key: 'sira',    placeholder: 'Tüm Sıralar',    optKey: 'siralar' },
+  { key: 'kat',     placeholder: 'Tüm Katlar',     optKey: 'katlar' },
+]
+// 5 parça (WMS Depo): Bina-Blok-Koridor-Sütun-Kat
+const DIMS_RB = [
+  { key: 'bina',    placeholder: 'Tüm Binalar',    optKey: 'binalar' },
+  { key: 'blok',    placeholder: 'Tüm Bloklar',    optKey: 'bloklar' },
+  { key: 'koridor', placeholder: 'Tüm Koridorlar', optKey: 'koridorlar' },
+  { key: 'sutun',   placeholder: 'Tüm Sütunlar',   optKey: 'sutunlar' },
   { key: 'kat',     placeholder: 'Tüm Katlar',     optKey: 'katlar' },
 ]
 
@@ -42,19 +42,20 @@ const filterKey = k => `filter${k[0].toUpperCase()}${k.slice(1)}`
 
 export default function RafListesi({ onNavigate }) {
   const { rows, rowsLoading, koridorlar, addKoridorlar, firmaProfile } = useStore()
-  const isWms31   = firmaProfile?.sablon === SABLON.WMS31
-  const isRedbull = firmaProfile?.sablon === SABLON.WMS_REDBULL
+  const sablon    = firmaProfile?.sablon
+  const isWms31   = sablon === SABLON.WMS31
+  const isRedbull = sablon === SABLON.WMS_REDBULL
 
-  const DIMS     = isRedbull ? DIMS_RB : DIMS_4
-  const groupKey = isRedbull ? 'koridor' : 'raf'      // "Koridor" olarak gösterilir
-  const parseFn  = isRedbull ? parseAdresRedbull : parseAdres
+  const DIMS    = isRedbull ? DIMS_RB : DIMS_4
+  const parseFn = isRedbull ? parseAdresRedbull : parseAdres
 
   const [search, setSearch]           = useState('')
   const [filterDurum, setFilterDurum] = useState([])
   const [dim, setDim]                 = useState({})   // { <iç anahtar>: string[] }
   const [sortBy, setSortBy]           = useState('key')
   const [sortDir, setSortDir]         = useState('asc')
-  const [selected, setSelected]       = useState(() => new Set())
+  const [selected, setSelected]       = useState(() => new Set())   // "1-AL" | "1-AL|05"
+  const [acik, setAcik]               = useState(() => new Set())   // açık koridor anahtarları
   const [page, setPage]               = useState(1)
   const [pageSize, setPageSize]       = useState(100)
 
@@ -76,22 +77,29 @@ export default function RafListesi({ onNavigate }) {
     })
   }, [rows, search, filterDurum, dim, DIMS, parseFn])
 
-  // filteredRows → koridor bazında gruplanır: her satır bir koridor.
-  // Adresi çözümlenemeyen (koridorsuz) satırlar hiçbir gruba girmez — koridor
-  // seçimine dayalı bu sayfada gösterilemezler; başlıktaki "kalem" sayısı da
-  // bu yüzden grup toplamından (kalemSayisi) türetilir, ham filteredRows'tan değil.
+  // filteredRows → koridor (Blok+Koridor bileşiği) bazında gruplanır; her grup
+  // altında Sütun kırılımı. Adresi çözümlenemeyen satır hiçbir gruba girmez —
+  // başlıktaki "kalem" grup toplamından (toplamKalem) türetilir.
   const groups = useMemo(() => {
     const map = new Map()
     filteredRows.forEach(r => {
-      const key = parseFn(r.adres)[groupKey]
+      const key = getKoridor(r.adres, sablon)
       if (!key) return
       let g = map.get(key)
-      if (!g) { g = { key, skuSet: new Set(), adresSet: new Set(), miktar: 0, kalemSayisi: 0 }; map.set(key, g) }
+      if (!g) { g = { key, skuSet: new Set(), adresSet: new Set(), miktar: 0, kalemSayisi: 0, sutunMap: new Map() }; map.set(key, g) }
       g.kalemSayisi += 1
       if (r.kod) g.skuSet.add(r.kod)
       if (r.adres) g.adresSet.add(r.adres)
       const m = parseFloat(String(r.sayim ?? '').replace(',', '.'))
       if (!Number.isNaN(m)) g.miktar += m
+
+      const sut = getSutun(r.adres, sablon) || '—'
+      let sg = g.sutunMap.get(sut)
+      if (!sg) { sg = { sutun: sut, skuSet: new Set(), adresSet: new Set(), miktar: 0, kalemSayisi: 0 }; g.sutunMap.set(sut, sg) }
+      sg.kalemSayisi += 1
+      if (r.kod) sg.skuSet.add(r.kod)
+      if (r.adres) sg.adresSet.add(r.adres)
+      if (!Number.isNaN(m)) sg.miktar += m
     })
     return [...map.values()].map(g => ({
       key: g.key,
@@ -100,8 +108,11 @@ export default function RafListesi({ onNavigate }) {
       kalemSayisi: g.kalemSayisi,
       miktar: g.miktar,
       inSayim: koridorlar.includes(g.key),
+      sutunlar: [...g.sutunMap.values()]
+        .map(s => ({ sutun: s.sutun, skuSayisi: s.skuSet.size, lokasyonSayisi: s.adresSet.size, kalemSayisi: s.kalemSayisi, miktar: s.miktar }))
+        .sort((a, b) => String(a.sutun).localeCompare(String(b.sutun), 'tr', { numeric: true })),
     }))
-  }, [filteredRows, parseFn, groupKey, koridorlar])
+  }, [filteredRows, sablon, koridorlar])
 
   const toplamKalem = useMemo(() => groups.reduce((n, g) => n + g.kalemSayisi, 0), [groups])
 
@@ -130,37 +141,76 @@ export default function RafListesi({ onNavigate }) {
 
   useEffect(() => { setPage(1) }, [sorted.length, pageSize])
 
-  function toggleOne(key) {
-    setSelected(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
+  // ── Aç / kapa ──────────────────────────────────────────────────────────────
+  function toggleAcik(key) {
+    setAcik(prev => {
+      const n = new Set(prev)
+      if (n.has(key)) n.delete(key)
+      else n.add(key)
+      return n
     })
   }
+  const tumAcik = groups.length > 0 && groups.every(g => acik.has(g.key))
+  function acKapaHepsi() {
+    setAcik(tumAcik ? new Set() : new Set(groups.map(g => g.key)))
+  }
+
+  // ── Seçim ─────────────────────────────────────────────────────────────────
+  function toggleKey(key) {
+    setSelected(prev => {
+      const n = new Set(prev)
+      if (n.has(key)) n.delete(key)
+      else n.add(key)
+      return n
+    })
+  }
+
+  // Bir koridorun TÜM sütunları tek tek seçiliyse bare koridora indir; bare
+  // seçiliyse sütun alt-anahtarlarını at. Aktar + sayaç bunu kullanır.
+  const effectiveSelected = useMemo(() => {
+    const bareKor = new Set()
+    const korSut  = new Map()
+    for (const k of selected) {
+      const i = k.indexOf('|')
+      if (i === -1) bareKor.add(k)
+      else {
+        const kor = k.slice(0, i)
+        if (!korSut.has(kor)) korSut.set(kor, new Set())
+        korSut.get(kor).add(k.slice(i + 1))
+      }
+    }
+    const out = new Set(bareKor)
+    for (const [kor, sutuns] of korSut) {
+      if (out.has(kor)) continue
+      const g = groups.find(x => x.key === kor)
+      if (g && g.sutunlar.length > 0 && g.sutunlar.every(s => sutuns.has(s.sutun))) out.add(kor)
+      else sutuns.forEach(s => out.add(`${kor}|${s}`))
+    }
+    return [...out]
+  }, [selected, groups])
 
   const allSelected = groups.length > 0 && groups.every(g => selected.has(g.key))
   function toggleAll() {
     setSelected(prev => {
-      const next = new Set(prev)
-      if (allSelected) groups.forEach(g => next.delete(g.key))
-      else groups.forEach(g => next.add(g.key))
-      return next
+      const n = new Set(prev)
+      if (allSelected) groups.forEach(g => n.delete(g.key))
+      else groups.forEach(g => n.add(g.key))
+      return n
     })
   }
 
   const filtreAktif = !!search.trim() || filterDurum.length > 0 || DIMS.some(d => dim[d.key]?.length)
   function temizle() { setSearch(''); setFilterDurum([]); setDim({}) }
 
-  // Seçili koridorları Koridor Sayımı'na aktarır. SKU koduna hiç dokunulmaz —
-  // sayım ekseni doğrudan koridor olduğu için yalnız o koridorlardaki satırlar
-  // sayıma/analize/rapora girer (kör sayımın SKU bazlı davranışının aksine).
+  // Seçili kapsam anahtarlarını Kör Raf Sayım'a aktarır (bare koridor + sütun karışık).
   function handleAktar() {
-    if (selected.size === 0) return
-    addKoridorlar([...selected])
+    if (effectiveSelected.length === 0) return
+    addKoridorlar(effectiveSelected)
     setSelected(new Set())
     onNavigate(isWms31 ? 'antrepokoridorsayim' : isRedbull ? 'redbullkoridorsayim' : 'koridorsayim')
   }
+
+  const secimSayisi = effectiveSelected.length
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -171,16 +221,16 @@ export default function RafListesi({ onNavigate }) {
             <h1 className="text-[15px] font-bold text-slate-900">Raf Listesi</h1>
             <p className="text-[11.5px] text-slate-400 mono">
               {groups.length.toLocaleString('tr')} koridor · {toplamKalem.toLocaleString('tr')} kalem
-              {selected.size > 0 ? ` · ${selected.size} seçili` : ''}
+              {secimSayisi > 0 ? ` · ${secimSayisi} seçili` : ''}
             </p>
           </div>
           <button
             onClick={handleAktar}
-            disabled={selected.size === 0}
+            disabled={secimSayisi === 0}
             className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[12.5px] font-semibold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
           >
             <span className="ms" style={{ fontSize: 16 }}>view_week</span>
-            Koridor Sayımına Aktar{selected.size > 0 ? ` (${selected.size})` : ''}
+            Kör Raf Sayımına Aktar{secimSayisi > 0 ? ` (${secimSayisi})` : ''}
           </button>
         </div>
 
@@ -218,6 +268,15 @@ export default function RafListesi({ onNavigate }) {
               <span className="ms" style={{ fontSize: 13 }}>filter_list_off</span> Temizle
             </button>
           )}
+          {groups.length > 0 && (
+            <button
+              onClick={acKapaHepsi}
+              className="ml-auto flex items-center gap-1 px-2 py-1 text-[11.5px] text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
+            >
+              <span className="ms" style={{ fontSize: 14 }}>{tumAcik ? 'unfold_less' : 'unfold_more'}</span>
+              {tumAcik ? 'Tümünü Kapat' : 'Tümünü Aç'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -240,7 +299,7 @@ export default function RafListesi({ onNavigate }) {
                 <th className="px-3 py-2.5 w-10 text-center">
                   <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded" />
                 </th>
-                <SortHeader label="Koridor" col="key" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="w-40" />
+                <SortHeader label="Koridor" col="key" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="w-44" />
                 <SortHeader label="SKU Sayısı" col="skuSayisi" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" className="w-32" />
                 <SortHeader label="Lokasyon" col="lokasyonSayisi" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" className="w-32" />
                 <SortHeader label="Toplam Sistem" col="miktar" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" className="w-36" />
@@ -248,30 +307,74 @@ export default function RafListesi({ onNavigate }) {
             </thead>
             <tbody className="text-[12.5px]">
               {paginated.map((g, i) => {
-                const isSel = selected.has(g.key)
-                return (
+                const korSel  = selected.has(g.key)
+                const kismi   = !korSel && g.sutunlar.some(s => selected.has(`${g.key}|${s.sutun}`))
+                const open    = acik.has(g.key)
+                return [
                   <tr
                     key={g.key}
-                    onClick={() => toggleOne(g.key)}
+                    onClick={() => toggleAcik(g.key)}
                     className="border-b border-slate-100 hover:bg-blue-50/30 cursor-pointer"
-                    style={isSel ? { background: '#eff6ff' } : i % 2 === 1 ? { background: '#f8fafc' } : {}}
+                    style={korSel ? { background: '#eff6ff' } : i % 2 === 1 ? { background: '#f8fafc' } : {}}
                   >
                     <td className="px-3 py-2 text-center" onClick={e => e.stopPropagation()}>
-                      <input type="checkbox" checked={isSel} onChange={() => toggleOne(g.key)} className="rounded" />
+                      <input
+                        type="checkbox"
+                        checked={korSel}
+                        ref={el => { if (el) el.indeterminate = kismi }}
+                        onChange={() => toggleKey(g.key)}
+                        className="rounded"
+                      />
                     </td>
                     <td className="px-3 py-2 mono font-medium text-blue-700">
+                      <span className="ms align-middle text-slate-400 mr-1" style={{ fontSize: 15 }}>
+                        {open ? 'expand_more' : 'chevron_right'}
+                      </span>
                       {g.key}
                       {g.inSayim && (
                         <span className="ml-1.5 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[10px] font-semibold align-middle">
                           Sayımda
                         </span>
                       )}
+                      <span className="ml-1.5 text-[10px] text-slate-400 align-middle">{g.sutunlar.length} sütun</span>
                     </td>
                     <td className="px-3 py-2 text-right mono text-slate-600">{g.skuSayisi.toLocaleString('tr')}</td>
                     <td className="px-3 py-2 text-right mono text-slate-500">{g.lokasyonSayisi.toLocaleString('tr')}</td>
                     <td className="px-3 py-2 text-right mono text-slate-600">{g.miktar.toLocaleString('tr')}</td>
-                  </tr>
-                )
+                  </tr>,
+                  ...(open ? g.sutunlar.map(s => {
+                    const sk    = `${g.key}|${s.sutun}`
+                    const sSel  = selected.has(sk)
+                    return (
+                      <tr
+                        key={sk}
+                        onClick={() => { if (!korSel) toggleKey(sk) }}
+                        className={'border-b border-slate-100 ' + (korSel ? '' : 'hover:bg-blue-50/30 cursor-pointer')}
+                        style={sSel ? { background: '#eff6ff' } : { background: '#fafafa' }}
+                      >
+                        <td className="px-3 py-1.5 text-center" onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={korSel || sSel}
+                            disabled={korSel}
+                            onChange={() => toggleKey(sk)}
+                            className="rounded"
+                          />
+                        </td>
+                        <td className="px-3 py-1.5 pl-8 mono text-slate-600 text-[11.5px]">
+                          <span className="ms align-middle text-slate-300 mr-1" style={{ fontSize: 14 }}>subdirectory_arrow_right</span>
+                          Sütun {s.sutun}
+                          {koridorlar.includes(sk) && (
+                            <span className="ml-1.5 px-1 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[9px] font-semibold align-middle">Sayımda</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-1.5 text-right mono text-slate-500 text-[11.5px]">{s.skuSayisi.toLocaleString('tr')}</td>
+                        <td className="px-3 py-1.5 text-right mono text-slate-400 text-[11.5px]">{s.lokasyonSayisi.toLocaleString('tr')}</td>
+                        <td className="px-3 py-1.5 text-right mono text-slate-500 text-[11.5px]">{s.miktar.toLocaleString('tr')}</td>
+                      </tr>
+                    )
+                  }) : []),
+                ]
               })}
             </tbody>
           </table>

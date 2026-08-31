@@ -1,33 +1,31 @@
 import { SABLON } from '../constants'
 
+// ─── Birleşik adres modeli ───────────────────────────────────────────────────
+// 4 parça (LOS Depo / WMS Antrepo): Blok-Koridor-Sütun-Kat        (ör. 1-AL-05-3)
+// 5 parça (WMS Depo / Redbull):     Bina-Blok-Koridor-Sütun-Kat   (ör. 4-09L-10-1-1)
+// 5 parça = 4 parça + baştan `bina`. İç anahtarlar `blok/koridor/sutun/kat` iki
+// şemada da AYNI anlama gelir.
+
 const FILTRE_ETIKETLERI = {
   filterSearch:   'Ara',
   filterDurum:    'Durum',
   filterKategori: 'Kategori',
   filterUrunTipi: 'Ürün Tipi',
   filterPalet:    'Palet',
-  filterRaf:      'Koridor',
-  filterSira:     'Sütun',
-  filterKolon:    'Sıra',
-  filterGoz:      'Kat',
-  filterGirisGun: 'Giriş Günü',
   filterBina:     'Bina',
+  filterBlok:     'Blok',
   filterKoridor:  'Koridor',
   filterSutun:    'Sütun',
   filterKat:      'Kat',
+  filterGirisGun: 'Giriş Günü',
 }
 
 /** Sayım sayfalarındaki aktif filtreleri "Koridor: A, B · Sütun: 1" gibi okunabilir
  *  bir özete çevirir — görev atarken hangi kritere göre gönderildiğini
  *  görev kartında gösterebilmek için. Aktif filtre yoksa boş string döner. */
 export function buildFiltreOzeti(filters) {
-  // `filterSira` iç anahtarı 4 parçalı şemada (LOS Depo / WMS Antrepo) konum 2'dir
-  // (ortak sözlükte "Sütun"), WMS Depo'nun 5 parçalı şemasında konum 4'tür ("Sıra").
-  // Aynı anahtar iki farklı etikete denk geldiği için şemayı ayırt ediyoruz.
-  const besParcaliSema = filters.filterKoridor !== undefined || filters.filterBina !== undefined
-  const etiketler = besParcaliSema ? { ...FILTRE_ETIKETLERI, filterSira: 'Sıra' } : FILTRE_ETIKETLERI
   const parts = []
-  for (const [key, label] of Object.entries(etiketler)) {
+  for (const [key, label] of Object.entries(FILTRE_ETIKETLERI)) {
     const val = filters[key]
     if (key === 'filterSearch') {
       if (val && val.trim()) parts.push(`${label}: "${val.trim()}"`)
@@ -40,21 +38,47 @@ export function buildFiltreOzeti(filters) {
 
 export function parseAdres(adres) {
   const parts = String(adres || '').split('-')
-  return { raf: parts[0] || '', sira: parts[1] || '', kolon: parts[2] || '', goz: parts[3] || '' }
+  return { blok: parts[0] || '', koridor: parts[1] || '', sutun: parts[2] || '', kat: parts[3] || '' }
 }
 
 /**
- * Bir adresin ait olduğu koridor anahtarı. Koridor Sayımı ailesinin (ve Raf
- * Listesi'nin) gruplama/eşleştirme birimi — şablona göre adresin farklı
- * parçasından okunur:
- *   LOS Depo / WMS Antrepo → 4 parçalı `Raf-Sıra-Kolon-Göz`      → 1. parça
- *   WMS Depo               → 5 parçalı `Bina-Koridor-Sutun-Sıra-Kat` → 2. parça
- * (Ortak sözlükte her ikisi de "Koridor" olarak gösterilir, bkz. FILTRE_ETIKETLERI.)
+ * Bir adresin ait olduğu koridor anahtarı — Raf Listesi / Kör Raf Sayım
+ * gruplama-eşleştirme birimi. Blok + Koridor bileşiği (aynı koridor kodu farklı
+ * bloklarda olabilir). Redbull'da Bina bileşiğe girmez (ayrı filtre).
+ *   1-AL-05-3        → "1-AL"
+ *   4-09L-10-1-1     → "09L-10"
  */
 export function getKoridor(adres, sablon) {
-  return sablon === SABLON.WMS_REDBULL
-    ? parseAdresRedbull(adres).koridor
-    : parseAdres(adres).raf
+  const p = sablon === SABLON.WMS_REDBULL ? parseAdresRedbull(adres) : parseAdres(adres)
+  return [p.blok, p.koridor].filter(Boolean).join('-')
+}
+
+/** Bir adresin "Sütun" bileşeni (Raf Listesi'nde koridor altındaki alt kırılım). */
+export function getSutun(adres, sablon) {
+  const p = sablon === SABLON.WMS_REDBULL ? parseAdresRedbull(adres) : parseAdres(adres)
+  return p.sutun
+}
+
+/**
+ * Kör Raf Sayım kapsam eşleştirmesi. `kapsamAnahtarlari` elemanları iki biçimden:
+ *   "1-AL"     → tüm koridor (blok+koridor bileşiği)
+ *   "1-AL|05"  → o koridor, yalnız sütun 05   (| ayraç; adres parçalarında geçmez)
+ * Adresi çözümlenemeyen (koridorsuz) satır hiçbir kapsama girmez.
+ */
+export function matchesKoridorKapsam(adres, sablon, kapsamAnahtarlari) {
+  const kor = getKoridor(adres, sablon)
+  if (!kor) return false
+  let sut
+  for (const k of kapsamAnahtarlari) {
+    const i = k.indexOf('|')
+    if (i === -1) {
+      if (k === kor) return true
+    } else if (k.slice(0, i) === kor) {
+      if (sut === undefined) sut = getSutun(adres, sablon)
+      if (k.slice(i + 1) === sut) return true
+    }
+  }
+  return false
 }
 
 const URUN_TIPI_MAP = { A: 'Ambalaj', M: 'Mamul', H: 'Hammadde', Y: 'Yardımcı Madde', N: 'Numune' }
@@ -65,34 +89,36 @@ export function getUrunTipi(kod) {
   return URUN_TIPI_MAP[harf] || 'Tanımsız'
 }
 
+/** sortType==='2' iken Sütun/Kat önceliği değişir (Blok/Koridor her zaman ilk iki
+ *  sırada sabit). */
 export function sortRows(rows, sortType) {
   return [...rows].sort((a, b) => {
     const pa = parseAdres(a.adres), pb = parseAdres(b.adres)
-    if (pa.raf !== pb.raf) return pa.raf.localeCompare(pb.raf)
-    if (pa.sira !== pb.sira) return pa.sira.localeCompare(pb.sira)
+    if (pa.blok !== pb.blok) return pa.blok.localeCompare(pb.blok)
+    if (pa.koridor !== pb.koridor) return pa.koridor.localeCompare(pb.koridor)
     if (sortType === '2') {
-      if (pa.goz !== pb.goz) return pa.goz.localeCompare(pb.goz)
-      return pa.kolon.localeCompare(pb.kolon)
+      if (pa.kat !== pb.kat) return pa.kat.localeCompare(pb.kat)
+      return pa.sutun.localeCompare(pb.sutun)
     }
-    if (pa.kolon !== pb.kolon) return pa.kolon.localeCompare(pb.kolon)
-    return pa.goz.localeCompare(pb.goz)
+    if (pa.sutun !== pb.sutun) return pa.sutun.localeCompare(pb.sutun)
+    return pa.kat.localeCompare(pb.kat)
   })
 }
 
 export function getUniqueAdresValues(rows) {
-  const rafSet = new Set(), siraSet = new Set(), kolonSet = new Set(), gozSet = new Set()
+  const blokSet = new Set(), koridorSet = new Set(), sutunSet = new Set(), katSet = new Set()
   rows.forEach(r => {
     const p = parseAdres(r.adres)
-    if (p.raf) rafSet.add(p.raf)
-    if (p.sira) siraSet.add(p.sira)
-    if (p.kolon) kolonSet.add(p.kolon)
-    if (p.goz) gozSet.add(p.goz)
+    if (p.blok) blokSet.add(p.blok)
+    if (p.koridor) koridorSet.add(p.koridor)
+    if (p.sutun) sutunSet.add(p.sutun)
+    if (p.kat) katSet.add(p.kat)
   })
   return {
-    raflar: [...rafSet].sort(),
-    siralar: [...siraSet].sort(),
-    kolonlar: [...kolonSet].sort((a, b) => Number(a) - Number(b)),
-    gozler: [...gozSet].sort((a, b) => Number(a) - Number(b)),
+    bloklar: [...blokSet].sort(),
+    koridorlar: [...koridorSet].sort(),
+    sutunlar: [...sutunSet].sort((a, b) => Number(a) - Number(b)),
+    katlar: [...katSet].sort((a, b) => Number(a) - Number(b)),
   }
 }
 
@@ -102,13 +128,13 @@ export function getUniqueAdresValues(rows) {
  * uygulanmış veriden türetilir.
  *
  * filters: { filterSearch, filterDurum, filterKategori, filterUrunTipi, filterPalet?,
- *            filterRaf, filterSira, filterKolon, filterGoz, filterGirisGun? }
+ *            filterBlok, filterKoridor, filterSutun, filterKat, filterGirisGun? }
  */
 export function computeFilterOptions(sourceRows, filters) {
   const {
     filterSearch = '',
     filterDurum = [], filterKategori = [], filterUrunTipi = [], filterPalet,
-    filterRaf = [], filterSira = [], filterKolon = [], filterGoz = [],
+    filterBlok = [], filterKoridor = [], filterSutun = [], filterKat = [],
     filterGirisGun = [],
   } = filters
 
@@ -134,10 +160,10 @@ export function computeFilterOptions(sourceRows, filters) {
         if (!ok) return false
       }
       const p = parseAdres(r.adres)
-      if (exclude !== 'raf'   && filterRaf.length > 0   && !filterRaf.includes(p.raf))     return false
-      if (exclude !== 'sira'  && filterSira.length > 0  && !filterSira.includes(p.sira))   return false
-      if (exclude !== 'kolon' && filterKolon.length > 0 && !filterKolon.includes(p.kolon)) return false
-      if (exclude !== 'goz'   && filterGoz.length > 0   && !filterGoz.includes(p.goz))     return false
+      if (exclude !== 'blok'    && filterBlok.length > 0    && !filterBlok.includes(p.blok))       return false
+      if (exclude !== 'koridor' && filterKoridor.length > 0 && !filterKoridor.includes(p.koridor)) return false
+      if (exclude !== 'sutun'   && filterSutun.length > 0   && !filterSutun.includes(p.sutun))     return false
+      if (exclude !== 'kat'     && filterKat.length > 0     && !filterKat.includes(p.kat))         return false
       return true
     })
   }
@@ -152,10 +178,10 @@ export function computeFilterOptions(sourceRows, filters) {
     durumlar:    DURUM_ORDER.filter(d => availDurumlar.has(d)),
     urunTipleri: URUN_TIPI_ORDER.filter(t => availUrunTipleri.has(t)),
     kategoriler: [...new Set(apply(sourceRows, 'kategori').map(r => r.kategori).filter(Boolean))].sort(),
-    raflar:      [...new Set(apply(sourceRows, 'raf').map(r => parseAdres(r.adres).raf).filter(Boolean))].sort(),
-    siralar:     [...new Set(apply(sourceRows, 'sira').map(r => parseAdres(r.adres).sira).filter(Boolean))].sort(),
-    kolonlar:    [...new Set(apply(sourceRows, 'kolon').map(r => parseAdres(r.adres).kolon).filter(Boolean))].sort((a, b) => Number(a) - Number(b)),
-    gozler:      [...new Set(apply(sourceRows, 'goz').map(r => parseAdres(r.adres).goz).filter(Boolean))].sort((a, b) => Number(a) - Number(b)),
+    bloklar:     [...new Set(apply(sourceRows, 'blok').map(r => parseAdres(r.adres).blok).filter(Boolean))].sort(),
+    koridorlar:  [...new Set(apply(sourceRows, 'koridor').map(r => parseAdres(r.adres).koridor).filter(Boolean))].sort(),
+    sutunlar:    [...new Set(apply(sourceRows, 'sutun').map(r => parseAdres(r.adres).sutun).filter(Boolean))].sort((a, b) => Number(a) - Number(b)),
+    katlar:      [...new Set(apply(sourceRows, 'kat').map(r => parseAdres(r.adres).kat).filter(Boolean))].sort((a, b) => Number(a) - Number(b)),
   }
 
   if (hasPalet) {
@@ -166,37 +192,35 @@ export function computeFilterOptions(sourceRows, filters) {
   return result
 }
 
-// ─── WMS Depo Redbull — 5 parçalı adres şeması (Bina-Koridor-Sutun-Sıra-Kat) ──
-// Akkim/Epson'un Raf-Sıra-Kolon-Göz şemasından tamamen ayrı, paralel bir
-// fonksiyon seti. Yukarıdaki parseAdres/sortRows/computeFilterOptions'a
-// kasıtlı olarak dokunulmadı.
+// ─── WMS Depo / Redbull — 5 parçalı şema (Bina-Blok-Koridor-Sütun-Kat) ────────
+// 4 parçalının aynısı, baştan `bina` eklenmiş.
 
 export function parseAdresRedbull(adres) {
   const parts = String(adres || '').split('-')
   return {
     bina:    parts[0] || '',
-    koridor: parts[1] || '',
-    sutun:   parts[2] || '',
-    sira:    parts[3] || '',
+    blok:    parts[1] || '',
+    koridor: parts[2] || '',
+    sutun:   parts[3] || '',
     kat:     parts[4] || '',
   }
 }
 
 const numCmp = (a, b) => a.localeCompare(b, 'tr', { numeric: true })
 
-/** sortType==='2' iken Sıra/Kat önceliği değişir (Bina/Koridor/Sutun her zaman
- *  ilk üç sırada sabit) — mevcut Raf/Sıra/Kolon/Göz sortType deseniyle aynı UX. */
+/** sortType==='2' iken Sütun/Kat önceliği değişir (Bina/Blok/Koridor her zaman
+ *  ilk üç sırada sabit). */
 export function sortRowsRedbull(rows, sortType) {
   return [...rows].sort((a, b) => {
     const pa = parseAdresRedbull(a.adres), pb = parseAdresRedbull(b.adres)
     if (pa.bina !== pb.bina) return numCmp(pa.bina, pb.bina)
+    if (pa.blok !== pb.blok) return numCmp(pa.blok, pb.blok)
     if (pa.koridor !== pb.koridor) return numCmp(pa.koridor, pb.koridor)
-    if (pa.sutun !== pb.sutun) return numCmp(pa.sutun, pb.sutun)
     if (sortType === '2') {
       if (pa.kat !== pb.kat) return numCmp(pa.kat, pb.kat)
-      return numCmp(pa.sira, pb.sira)
+      return numCmp(pa.sutun, pb.sutun)
     }
-    if (pa.sira !== pb.sira) return numCmp(pa.sira, pb.sira)
+    if (pa.sutun !== pb.sutun) return numCmp(pa.sutun, pb.sutun)
     return numCmp(pa.kat, pb.kat)
   })
 }
@@ -209,7 +233,7 @@ export function sortRowsRedbull(rows, sortType) {
 export function computeFilterOptionsRedbull(sourceRows, filters) {
   const {
     filterSearch = '', filterDurum = [],
-    filterBina = [], filterKoridor = [], filterSutun = [], filterSira = [], filterKat = [],
+    filterBina = [], filterBlok = [], filterKoridor = [], filterSutun = [], filterKat = [],
   } = filters
 
   function apply(rows, exclude) {
@@ -219,9 +243,9 @@ export function computeFilterOptionsRedbull(sourceRows, filters) {
       if (exclude !== 'durum' && filterDurum.length > 0 && !filterDurum.includes(r.durum)) return false
       const p = parseAdresRedbull(r.adres)
       if (exclude !== 'bina'    && filterBina.length > 0    && !filterBina.includes(p.bina))       return false
+      if (exclude !== 'blok'    && filterBlok.length > 0    && !filterBlok.includes(p.blok))       return false
       if (exclude !== 'koridor' && filterKoridor.length > 0 && !filterKoridor.includes(p.koridor)) return false
       if (exclude !== 'sutun'   && filterSutun.length > 0   && !filterSutun.includes(p.sutun))     return false
-      if (exclude !== 'sira'    && filterSira.length > 0    && !filterSira.includes(p.sira))       return false
       if (exclude !== 'kat'     && filterKat.length > 0     && !filterKat.includes(p.kat))         return false
       return true
     })
@@ -230,9 +254,9 @@ export function computeFilterOptionsRedbull(sourceRows, filters) {
   return {
     durumlar:   [...new Set(apply(sourceRows, 'durum').map(r => r.durum).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'tr')),
     binalar:    [...new Set(apply(sourceRows, 'bina').map(r => parseAdresRedbull(r.adres).bina).filter(Boolean))].sort(numCmp),
+    bloklar:    [...new Set(apply(sourceRows, 'blok').map(r => parseAdresRedbull(r.adres).blok).filter(Boolean))].sort(numCmp),
     koridorlar: [...new Set(apply(sourceRows, 'koridor').map(r => parseAdresRedbull(r.adres).koridor).filter(Boolean))].sort(numCmp),
     sutunlar:   [...new Set(apply(sourceRows, 'sutun').map(r => parseAdresRedbull(r.adres).sutun).filter(Boolean))].sort(numCmp),
-    siralar:    [...new Set(apply(sourceRows, 'sira').map(r => parseAdresRedbull(r.adres).sira).filter(Boolean))].sort(numCmp),
     katlar:     [...new Set(apply(sourceRows, 'kat').map(r => parseAdresRedbull(r.adres).kat).filter(Boolean))].sort(numCmp),
   }
 }

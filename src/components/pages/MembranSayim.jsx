@@ -42,10 +42,10 @@ export default function MembranSayim({ onNavigate }) {
   const [filterDurum, setFilterDurum]   = useState([])
   const [filterPalet, setFilterPalet]   = useState([])
   const [filterUrunTipi, setFilterUrunTipi] = useState([])
-  const [filterRaf, setFilterRaf]       = useState([])
-  const [filterSira, setFilterSira]     = useState([])
-  const [filterKolon, setFilterKolon]   = useState([])
-  const [filterGoz, setFilterGoz]       = useState([])
+  const [filterBlok, setFilterBlok]       = useState([])
+  const [filterKoridor, setFilterKoridor]     = useState([])
+  const [filterSutun, setFilterSutun]   = useState([])
+  const [filterKat, setFilterKat]       = useState([])
   const [gorevModal, setGorevModal]     = useState(false)
   const [expandedPallets, setExpandedPallets] = useState(null) // null = hepsi açık
 
@@ -83,8 +83,8 @@ export default function MembranSayim({ onNavigate }) {
   )
 
   const filterOptions = useMemo(
-    () => computeFilterOptions(membranRows, { filterSearch, filterDurum, filterPalet, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz }),
-    [membranRows, filterSearch, filterDurum, filterPalet, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz]
+    () => computeFilterOptions(membranRows, { filterSearch, filterDurum, filterPalet, filterUrunTipi, filterBlok, filterKoridor, filterSutun, filterKat }),
+    [membranRows, filterSearch, filterDurum, filterPalet, filterUrunTipi, filterBlok, filterKoridor, filterSutun, filterKat]
   )
 
   const filtered = useMemo(() => {
@@ -99,14 +99,14 @@ export default function MembranSayim({ onNavigate }) {
       if (filterPalet.length > 0 && !filterPalet.includes(r.partiEk))   return false
       if (filterUrunTipi.length > 0 && !filterUrunTipi.includes(getUrunTipi(r.kod))) return false
       const p = parseAdres(r.adres)
-      if (filterRaf.length > 0   && !filterRaf.includes(p.raf))         return false
-      if (filterSira.length > 0  && !filterSira.includes(p.sira))       return false
-      if (filterKolon.length > 0 && !filterKolon.includes(p.kolon))     return false
-      if (filterGoz.length > 0   && !filterGoz.includes(p.goz))         return false
+      if (filterBlok.length > 0   && !filterBlok.includes(p.blok))         return false
+      if (filterKoridor.length > 0  && !filterKoridor.includes(p.koridor))       return false
+      if (filterSutun.length > 0 && !filterSutun.includes(p.sutun))     return false
+      if (filterKat.length > 0   && !filterKat.includes(p.kat))         return false
       return true
     })
     return sortRows(result, sortType)
-  }, [membranRows, filterSearch, filterDurum, filterPalet, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz, sortType])
+  }, [membranRows, filterSearch, filterDurum, filterPalet, filterUrunTipi, filterBlok, filterKoridor, filterSutun, filterKat, sortType])
 
   // Palet grupları: partiEk tek başına benzersiz değil (farklı kodlarda tekrar edebilir),
   // bu yüzden kod + partiEk birleşimi gerçek paleti belirler.
@@ -222,13 +222,13 @@ export default function MembranSayim({ onNavigate }) {
           {filterOptions.paletler?.length > 0 && (
             <MultiSelect placeholder="Tüm Paletler" options={filterOptions.paletler} value={filterPalet} onChange={setFilterPalet} style={{ borderColor: '#c4b5fd' }} />
           )}
-          <MultiSelect placeholder="Tüm Koridorlar" options={filterOptions.raflar}   value={filterRaf}   onChange={setFilterRaf} />
-          <MultiSelect placeholder="Tüm Sütunlar"   options={filterOptions.siralar}  value={filterSira}  onChange={setFilterSira} />
-          <MultiSelect placeholder="Tüm Sıralar"    options={filterOptions.kolonlar} value={filterKolon} onChange={setFilterKolon} />
-          <MultiSelect placeholder="Tüm Katlar"     options={filterOptions.gozler}   value={filterGoz}   onChange={setFilterGoz} />
-          {(filterDurum.length > 0 || filterPalet.length > 0 || filterUrunTipi.length > 0 || filterRaf.length > 0 || filterSira.length > 0 || filterKolon.length > 0 || filterGoz.length > 0 || filterSearch.trim()) && (
+          <MultiSelect placeholder="Tüm Bloklar"    options={filterOptions.bloklar}    value={filterBlok}    onChange={setFilterBlok} />
+          <MultiSelect placeholder="Tüm Koridorlar" options={filterOptions.koridorlar} value={filterKoridor} onChange={setFilterKoridor} />
+          <MultiSelect placeholder="Tüm Sütunlar"   options={filterOptions.sutunlar}   value={filterSutun}   onChange={setFilterSutun} />
+          <MultiSelect placeholder="Tüm Katlar"     options={filterOptions.katlar}     value={filterKat}     onChange={setFilterKat} />
+          {(filterDurum.length > 0 || filterPalet.length > 0 || filterUrunTipi.length > 0 || filterBlok.length > 0 || filterKoridor.length > 0 || filterSutun.length > 0 || filterKat.length > 0 || filterSearch.trim()) && (
             <button
-              onClick={() => { setFilterSearch(''); setFilterDurum([]); setFilterPalet([]); setFilterUrunTipi([]); setFilterRaf([]); setFilterSira([]); setFilterKolon([]); setFilterGoz([]) }}
+              onClick={() => { setFilterSearch(''); setFilterDurum([]); setFilterPalet([]); setFilterUrunTipi([]); setFilterBlok([]); setFilterKoridor([]); setFilterSutun([]); setFilterKat([]) }}
               className="flex items-center gap-1 px-2 py-1 text-[11.5px] text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
             >
               <span className="ms" style={{ fontSize: 13 }}>filter_list_off</span> Temizle
@@ -237,8 +237,8 @@ export default function MembranSayim({ onNavigate }) {
           <div className="ml-auto flex items-center gap-1.5">
             <span className="text-[11.5px] text-slate-400 font-medium">Sıra:</span>
             <select className="fsel" style={{ borderColor: '#93c5fd' }} value={sortType} onChange={e => setSortType(e.target.value)}>
-              <option value="1">Koridor › Sütun › Sıra › Kat</option>
-              <option value="2">Koridor › Sütun › Kat › Sıra</option>
+              <option value="1">Blok › Koridor › Sütun › Kat</option>
+              <option value="2">Blok › Koridor › Kat › Sütun</option>
             </select>
           </div>
         </div>
@@ -404,7 +404,7 @@ export default function MembranSayim({ onNavigate }) {
           rows={filtered}
           onClose={() => setGorevModal(false)}
           sayimTipi="membran"
-          filtreOzeti={buildFiltreOzeti({ filterSearch, filterDurum, filterPalet, filterUrunTipi, filterRaf, filterSira, filterKolon, filterGoz })}
+          filtreOzeti={buildFiltreOzeti({ filterSearch, filterDurum, filterPalet, filterUrunTipi, filterBlok, filterKoridor, filterSutun, filterKat })}
         />
       )}
     </div>

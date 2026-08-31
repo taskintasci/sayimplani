@@ -576,13 +576,13 @@ export default function SayimciEkran({ mode = 'self' }) {
             >
               {isRedbull ? (
                 <>
-                  <option value="1">Bina › Koridor › Sütun › Sıra › Kat</option>
-                  <option value="2">Bina › Koridor › Sütun › Kat › Sıra</option>
+                  <option value="1">Bina › Blok › Koridor › Sütun › Kat</option>
+                  <option value="2">Bina › Blok › Koridor › Kat › Sütun</option>
                 </>
               ) : (
                 <>
-                  <option value="1">Koridor › Sütun › Sıra › Kat</option>
-                  <option value="2">Koridor › Sütun › Kat › Sıra</option>
+                  <option value="1">Blok › Koridor › Sütun › Kat</option>
+                  <option value="2">Blok › Koridor › Kat › Sütun</option>
                 </>
               )}
             </select>
@@ -1083,7 +1083,7 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isKoridor, isRe
             <span className="ms text-amber-500" style={{ fontSize: 22 }}>add_box</span>
             Manuel Fazla Stok
             {isKoridor
-              ? <span className="text-xs font-normal text-teal-700 ml-1">(Koridor Sayımı)</span>
+              ? <span className="text-xs font-normal text-teal-700 ml-1">(Kör Raf Sayım)</span>
               : isKor && <span className="text-xs font-normal text-amber-700 ml-1">(Kör Sayım)</span>}
           </h3>
           <button onClick={handleClose} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 shrink-0">
@@ -1092,7 +1092,7 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isKoridor, isRe
         </div>
         <p className="text-slate-500 text-xs mb-4">
           Sistemde bulunmayan ürün.
-          {isKoridor ? ' Koridor sayım raporu' : isKor ? ' Kör sayım raporu' : ' Stok sayım raporu'}'ndaki manuel listeye eklenir.
+          {isKoridor ? ' Kör Raf sayım raporu' : isKor ? ' Kör sayım raporu' : ' Stok sayım raporu'}'ndaki manuel listeye eklenir.
         </p>
         <form onSubmit={kaydet} className="flex flex-col gap-3">
           <div>

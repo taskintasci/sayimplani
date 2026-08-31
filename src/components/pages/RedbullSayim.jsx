@@ -18,9 +18,9 @@ export default function RedbullSayim({ onNavigate }) {
   const [filterSearch, setFilterSearch] = useState('')
   const [filterDurum, setFilterDurum] = useState([])
   const [filterBina, setFilterBina] = useState([])
+  const [filterBlok, setFilterBlok] = useState([])
   const [filterKoridor, setFilterKoridor] = useState([])
   const [filterSutun, setFilterSutun] = useState([])
-  const [filterSira, setFilterSira] = useState([])
   const [filterKat, setFilterKat] = useState([])
   const [durumFiltre, setDurumFiltre] = useState('tumu')
   const [page, setPage] = useState(1)
@@ -55,8 +55,8 @@ export default function RedbullSayim({ onNavigate }) {
   }
 
   const filterOptions = useMemo(
-    () => computeFilterOptionsRedbull(rows, { filterSearch, filterDurum, filterBina, filterKoridor, filterSutun, filterSira, filterKat }),
-    [rows, filterSearch, filterDurum, filterBina, filterKoridor, filterSutun, filterSira, filterKat]
+    () => computeFilterOptionsRedbull(rows, { filterSearch, filterDurum, filterBina, filterBlok, filterKoridor, filterSutun, filterKat }),
+    [rows, filterSearch, filterDurum, filterBina, filterBlok, filterKoridor, filterSutun, filterKat]
   )
 
   const filteredBase = useMemo(() => {
@@ -70,14 +70,14 @@ export default function RedbullSayim({ onNavigate }) {
       if (filterDurum.length > 0 && !filterDurum.includes(r.durum)) return false
       const p = parseAdresRedbull(r.adres)
       if (filterBina.length > 0    && !filterBina.includes(p.bina))       return false
-      if (filterKoridor.length > 0 && !filterKoridor.includes(p.koridor)) return false
-      if (filterSutun.length > 0   && !filterSutun.includes(p.sutun))     return false
-      if (filterSira.length > 0    && !filterSira.includes(p.sira))       return false
+      if (filterBlok.length > 0 && !filterBlok.includes(p.blok)) return false
+      if (filterKoridor.length > 0   && !filterKoridor.includes(p.koridor))     return false
+      if (filterSutun.length > 0    && !filterSutun.includes(p.sutun))       return false
       if (filterKat.length > 0     && !filterKat.includes(p.kat))         return false
       return true
     })
     return sortRowsRedbull(result, sortType)
-  }, [rows, filterSearch, filterDurum, filterBina, filterKoridor, filterSutun, filterSira, filterKat, sortType])
+  }, [rows, filterSearch, filterDurum, filterBina, filterBlok, filterKoridor, filterSutun, filterKat, sortType])
 
   // Durum filtresi: mini istatistik rozetlerinden (Sayılan/Farklılık/Bekliyor)
   // bağımsız, ayrı bir kontrol — rozetler sadece bilgi amaçlı kalıyor.
@@ -171,9 +171,9 @@ export default function RedbullSayim({ onNavigate }) {
           <span className="text-[11.5px] text-slate-400 font-medium">Filtre:</span>
           <MultiSelect placeholder="Tüm Durumlar"  options={filterOptions.durumlar}   value={filterDurum}   onChange={setFilterDurum} />
           <MultiSelect placeholder="Tüm Binalar"    options={filterOptions.binalar}    value={filterBina}    onChange={setFilterBina} />
+          <MultiSelect placeholder="Tüm Bloklar"    options={filterOptions.bloklar}    value={filterBlok}    onChange={setFilterBlok} />
           <MultiSelect placeholder="Tüm Koridorlar" options={filterOptions.koridorlar} value={filterKoridor} onChange={setFilterKoridor} />
           <MultiSelect placeholder="Tüm Sütunlar"   options={filterOptions.sutunlar}   value={filterSutun}   onChange={setFilterSutun} />
-          <MultiSelect placeholder="Tüm Sıralar"    options={filterOptions.siralar}    value={filterSira}    onChange={setFilterSira} />
           <MultiSelect placeholder="Tüm Katlar"     options={filterOptions.katlar}     value={filterKat}     onChange={setFilterKat} />
           <div className="flex items-center gap-1.5 ml-1">
             <span className="text-[11.5px] text-slate-400 font-medium">Durum:</span>
@@ -184,9 +184,9 @@ export default function RedbullSayim({ onNavigate }) {
               <option value="bekliyor">Bekliyor</option>
             </select>
           </div>
-          {(filterDurum.length > 0 || filterBina.length > 0 || filterKoridor.length > 0 || filterSutun.length > 0 || filterSira.length > 0 || filterKat.length > 0 || filterSearch.trim()) && (
+          {(filterDurum.length > 0 || filterBina.length > 0 || filterBlok.length > 0 || filterKoridor.length > 0 || filterSutun.length > 0 || filterKat.length > 0 || filterSearch.trim()) && (
             <button
-              onClick={() => { setFilterSearch(''); setFilterDurum([]); setFilterBina([]); setFilterKoridor([]); setFilterSutun([]); setFilterSira([]); setFilterKat([]) }}
+              onClick={() => { setFilterSearch(''); setFilterDurum([]); setFilterBina([]); setFilterBlok([]); setFilterKoridor([]); setFilterSutun([]); setFilterKat([]) }}
               className="flex items-center gap-1 px-2 py-1 text-[11.5px] text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
             >
               <span className="ms" style={{ fontSize: 13 }}>filter_list_off</span> Temizle
@@ -195,8 +195,8 @@ export default function RedbullSayim({ onNavigate }) {
           <div className="ml-auto flex items-center gap-1.5">
             <span className="text-[11.5px] text-slate-400 font-medium">Sıra:</span>
             <select className="fsel" style={{ borderColor: '#93c5fd' }} value={sortType} onChange={e => setSortType(e.target.value)}>
-              <option value="1">Bina › Koridor › Sütun › Sıra › Kat</option>
-              <option value="2">Bina › Koridor › Sütun › Kat › Sıra</option>
+              <option value="1">Bina › Blok › Koridor › Sütun › Kat</option>
+              <option value="2">Bina › Blok › Koridor › Kat › Sütun</option>
             </select>
           </div>
         </div>
@@ -419,7 +419,7 @@ export default function RedbullSayim({ onNavigate }) {
           rows={filtered}
           onClose={() => setGorevModal(false)}
           sayimTipi="redbull"
-          filtreOzeti={buildFiltreOzeti({ filterSearch, filterDurum, filterBina, filterKoridor, filterSutun, filterSira, filterKat })}
+          filtreOzeti={buildFiltreOzeti({ filterSearch, filterDurum, filterBina, filterBlok, filterKoridor, filterSutun, filterKat })}
         />
       )}
     </div>

@@ -70,15 +70,15 @@ export default function KoridorSayimAnalizi({ onNavigate }) {
     return (
       <div className="flex flex-col gap-5">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Koridor Stok Sayım Analizi</h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">Koridor sayım listesi henüz oluşturulmadı</p>
+          <h1 className="text-xl font-bold text-slate-900">Kör Raf Sayım Analizi</h1>
+          <p className="text-[13px] text-slate-500 mt-0.5">Kör Raf sayım listesi henüz oluşturulmadı</p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
           <span className="ms text-slate-300 mb-3 block" style={{ fontSize: 48 }}>view_week</span>
           <div className="text-[14px] font-semibold text-slate-700 mb-1">Analiz için veri yok</div>
           <div className="text-[13px] text-slate-400 mb-4">Raf Listesi'nden koridor seçerek liste oluşturun</div>
           <button onClick={() => onNavigate(sayimRoute)} className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700">
-            <span className="ms" style={{ fontSize: 16 }}>view_week</span> Koridor Sayımı Sayfasına Git
+            <span className="ms" style={{ fontSize: 16 }}>view_week</span> Kör Raf Sayımı Sayfasına Git
           </button>
         </div>
       </div>
@@ -90,7 +90,7 @@ export default function KoridorSayimAnalizi({ onNavigate }) {
       {/* Başlık */}
       <div className="flex flex-wrap items-center justify-between gap-y-2">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Koridor Stok Sayım Analizi</h1>
+          <h1 className="text-xl font-bold text-slate-900">Kör Raf Sayım Analizi</h1>
           <p className="text-[13px] text-slate-500 mt-0.5">
             {session.type || 'Sayım'}{session.depoAdi ? ` · ${session.depoAdi}` : ''}{tarihStr ? ` · ${tarihStr}` : ''}
           </p>
@@ -108,7 +108,7 @@ export default function KoridorSayimAnalizi({ onNavigate }) {
       {/* Genel Doğruluk — Büyük Kart */}
       <div className="bg-gradient-to-br from-blue-700 to-blue-900 rounded-2xl p-4 md:p-6 flex flex-col md:flex-row items-stretch md:items-center gap-6 md:gap-8">
         <div className="shrink-0">
-          <p className="text-blue-200 text-[12px] mono uppercase tracking-widest mb-1">Koridor Sayım Genel Doğruluk</p>
+          <p className="text-blue-200 text-[12px] mono uppercase tracking-widest mb-1">Kör Raf Sayım Genel Doğruluk</p>
           <p className="text-white font-black leading-none" style={{ fontSize: 52 }}>%{genelPct.toLocaleString('tr', { maximumFractionDigits: 2 })}</p>
           <p className="text-blue-300 text-[12px] mt-1">AVERAGE(Adres%, Stok%, SKU%)</p>
         </div>

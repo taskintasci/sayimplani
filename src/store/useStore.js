@@ -15,7 +15,7 @@ import {
   uploadSkuMasterdata, downloadSkuMasterdata,
   uploadLokasyonlar, downloadLokasyonlar,
 } from '../firebase/rowStorage'
-import { getKoridor } from '../utils/adresUtils'
+import { matchesKoridorKapsam } from '../utils/adresUtils'
 
 // ─── Dev-only error logger — prod'da hassas hata detayı loglanmaz ─────────
 const devErr = (msg, err) => { if (import.meta.env.DEV) console.error(msg, err) }
@@ -524,7 +524,7 @@ const useStore = create((set, get) => ({
         const sablon = get().firmaProfile?.sablon
         const koridorlar = sessionData.koridorlar || []
         const koridorMatched = koridorlar.length > 0 && sablon
-          ? rows.filter(r => koridorlar.includes(getKoridor(r.adres, sablon)))
+          ? rows.filter(r => matchesKoridorKapsam(r.adres, sablon, koridorlar))
           : []
         const manualRows        = sessionData.manualRows        || []
         const korManualRows     = sessionData.korManualRows     || []
@@ -598,7 +598,7 @@ const useStore = create((set, get) => ({
             korMatched:    korCodes.length > 0 ? state.rows.filter(r => korCodes.includes(r.kod)) : [],
             koridorlar,
             koridorMatched: koridorlar.length > 0 && sablon
-              ? state.rows.filter(r => koridorlar.includes(getKoridor(r.adres, sablon)))
+              ? state.rows.filter(r => matchesKoridorKapsam(r.adres, sablon, koridorlar))
               : [],
             session: state.session ? {
               ...state.session,
@@ -841,7 +841,7 @@ const useStore = create((set, get) => ({
     const temiz   = newKeys.map(k => String(k).trim()).filter(Boolean)
     const merged  = [...new Set([...state.koridorlar, ...temiz])]
     const sablon  = state.firmaProfile?.sablon
-    const matched = state.rows.filter(r => merged.includes(getKoridor(r.adres, sablon)))
+    const matched = state.rows.filter(r => matchesKoridorKapsam(r.adres, sablon, merged))
     set({ koridorlar: merged, koridorMatched: matched })
     if (state.activeSessionId && temiz.length > 0)
       updateDoc(doc(db, 'sessions', state.activeSessionId), { koridorlar: arrayUnion(...temiz) })
@@ -851,7 +851,7 @@ const useStore = create((set, get) => ({
     const state   = get()
     const updated = state.koridorlar.filter(k => k !== key)
     const sablon  = state.firmaProfile?.sablon
-    const matched = state.rows.filter(r => updated.includes(getKoridor(r.adres, sablon)))
+    const matched = state.rows.filter(r => matchesKoridorKapsam(r.adres, sablon, updated))
     set({ koridorlar: updated, koridorMatched: matched })
     if (state.activeSessionId)
       updateDoc(doc(db, 'sessions', state.activeSessionId), { koridorlar: arrayRemove(key) })

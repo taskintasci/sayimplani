@@ -49,9 +49,9 @@ const MENU = [
   { id: 'korrapor',     icon: 'summarize',      label: 'Kör Stok Sayım Raporu',     roles: YON_KONT, sablon: [SABLON.STANDART] },
   { divider: true,      roles: YON_KONT,        sablon: [SABLON.STANDART] },
   { id: 'rafliste',      icon: 'shelves',       label: 'Raf Listesi',                  roles: YON,      sablon: [SABLON.STANDART] },
-  { id: 'koridorsayim',  icon: 'view_week',     label: 'Koridor Stok Sayımı',          roles: YON,      sablon: [SABLON.STANDART] },
-  { id: 'koridoranaliz', icon: 'query_stats',   label: 'Koridor Stok Sayım Analizi',   roles: YON_KONT, sablon: [SABLON.STANDART] },
-  { id: 'koridorrapor',  icon: 'summarize',     label: 'Koridor Stok Sayım Raporu',    roles: YON_KONT, sablon: [SABLON.STANDART] },
+  { id: 'koridorsayim',  icon: 'view_week',     label: 'Kör Raf Sayımı',          roles: YON,      sablon: [SABLON.STANDART] },
+  { id: 'koridoranaliz', icon: 'query_stats',   label: 'Kör Raf Sayım Analizi',   roles: YON_KONT, sablon: [SABLON.STANDART] },
+  { id: 'koridorrapor',  icon: 'summarize',     label: 'Kör Raf Sayım Raporu',    roles: YON_KONT, sablon: [SABLON.STANDART] },
   { divider: true,      roles: YON,             sablon: [SABLON.STANDART] },
   { id: 'hareketlilik', icon: 'trending_up',    label: 'Hareketlilik Sayımı',       roles: YON,      sablon: [SABLON.STANDART] },
   { divider: true,      roles: YON,             sablon: [SABLON.STANDART] },
@@ -72,9 +72,9 @@ const MENU = [
   { id: 'antrepokorrapor',  icon: 'summarize',      label: 'Kör Sayım Raporu',      roles: YON_KONT, sablon: [SABLON.WMS31] },
   { divider: true,      roles: YON_KONT,        sablon: [SABLON.WMS31] },
   { id: 'antreporafliste',      icon: 'shelves',     label: 'Raf Listesi',                 roles: YON,      sablon: [SABLON.WMS31] },
-  { id: 'antrepokoridorsayim',  icon: 'view_week',   label: 'Koridor Stok Sayımı',         roles: YON,      sablon: [SABLON.WMS31] },
-  { id: 'antrepokoridoranaliz', icon: 'query_stats', label: 'Koridor Stok Sayım Analizi',  roles: YON_KONT, sablon: [SABLON.WMS31] },
-  { id: 'antrepokoridorrapor',  icon: 'summarize',   label: 'Koridor Stok Sayım Raporu',   roles: YON_KONT, sablon: [SABLON.WMS31] },
+  { id: 'antrepokoridorsayim',  icon: 'view_week',   label: 'Kör Raf Sayımı',         roles: YON,      sablon: [SABLON.WMS31] },
+  { id: 'antrepokoridoranaliz', icon: 'query_stats', label: 'Kör Raf Sayım Analizi',  roles: YON_KONT, sablon: [SABLON.WMS31] },
+  { id: 'antrepokoridorrapor',  icon: 'summarize',   label: 'Kör Raf Sayım Raporu',   roles: YON_KONT, sablon: [SABLON.WMS31] },
 
   // ── WMS Depo (wms_redbull) ─────────────────────────────────────────────
   { id: 'redbullpanel', icon: 'grid_view',      label: 'Panel',                     roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
@@ -91,9 +91,9 @@ const MENU = [
   { id: 'redbullkorrapor',  icon: 'summarize',      label: 'Kör Sayım Raporu',      roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
   { divider: true,      roles: YON_KONT,        sablon: [SABLON.WMS_REDBULL] },
   { id: 'redbullrafliste',      icon: 'shelves',     label: 'Raf Listesi',                 roles: YON,      sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullkoridorsayim',  icon: 'view_week',   label: 'Koridor Stok Sayımı',         roles: YON,      sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullkoridoranaliz', icon: 'query_stats', label: 'Koridor Stok Sayım Analizi',  roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
-  { id: 'redbullkoridorrapor',  icon: 'summarize',   label: 'Koridor Stok Sayım Raporu',   roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkoridorsayim',  icon: 'view_week',   label: 'Kör Raf Sayımı',         roles: YON,      sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkoridoranaliz', icon: 'query_stats', label: 'Kör Raf Sayım Analizi',  roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
+  { id: 'redbullkoridorrapor',  icon: 'summarize',   label: 'Kör Raf Sayım Raporu',   roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
 ]
 
 export default function Sidebar({ activePage, onNavigate, className = 'flex' }) {

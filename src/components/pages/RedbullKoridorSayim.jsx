@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import useStore from '../../store/useStore'
-import { sortRowsRedbull, computeFilterOptionsRedbull, parseAdresRedbull, buildFiltreOzeti, getKoridor } from '../../utils/adresUtils'
+import { sortRowsRedbull, computeFilterOptionsRedbull, parseAdresRedbull, buildFiltreOzeti, getKoridor, matchesKoridorKapsam } from '../../utils/adresUtils'
 import { exportRedbullResults } from '../../utils/excelExport'
 import RedbullPrintSheet from '../print/RedbullPrintSheet'
 import MultiSelect from '../shared/MultiSelect'
@@ -21,9 +21,9 @@ export default function RedbullKoridorSayim({ onNavigate }) {
   const [filterSearch, setFilterSearch] = useState('')
   const [filterDurum, setFilterDurum] = useState([])
   const [filterBina, setFilterBina]       = useState([])
-  const [filterKoridor, setFilterKoridor] = useState([])
-  const [filterSutun, setFilterSutun]     = useState([])
-  const [filterSira, setFilterSira]       = useState([])
+  const [filterBlok, setFilterBlok] = useState([])
+  const [filterKoridor, setFilterKoridor]     = useState([])
+  const [filterSutun, setFilterSutun]       = useState([])
   const [filterKat, setFilterKat]         = useState([])
   const [onlyDiff, setOnlyDiff]       = useState(false)
   const [page, setPage]               = useState(1)
@@ -79,9 +79,16 @@ export default function RedbullKoridorSayim({ onNavigate }) {
     [koridorSayilari]
   )
 
+  // Çiplerdeki her kapsam anahtarı ("1-AL" veya "1-AL|05") için kalem sayısı.
+  const cipSayilari = useMemo(() => {
+    const map = {}
+    koridorlar.forEach(k => { map[k] = rows.filter(r => matchesKoridorKapsam(r.adres, sablon, [k])).length })
+    return map
+  }, [koridorlar, rows, sablon])
+
   const filterOptions = useMemo(
-    () => computeFilterOptionsRedbull(koridorMatched, { filterSearch, filterDurum, filterBina, filterKoridor, filterSutun, filterSira, filterKat }),
-    [koridorMatched, filterSearch, filterDurum, filterBina, filterKoridor, filterSutun, filterSira, filterKat]
+    () => computeFilterOptionsRedbull(koridorMatched, { filterSearch, filterDurum, filterBina, filterBlok, filterKoridor, filterSutun, filterKat }),
+    [koridorMatched, filterSearch, filterDurum, filterBina, filterBlok, filterKoridor, filterSutun, filterKat]
   )
 
   const filteredBase = useMemo(() => {
@@ -95,14 +102,14 @@ export default function RedbullKoridorSayim({ onNavigate }) {
       if (filterDurum.length > 0 && !filterDurum.includes(r.durum)) return false
       const p = parseAdresRedbull(r.adres)
       if (filterBina.length > 0    && !filterBina.includes(p.bina))       return false
-      if (filterKoridor.length > 0 && !filterKoridor.includes(p.koridor)) return false
-      if (filterSutun.length > 0   && !filterSutun.includes(p.sutun))     return false
-      if (filterSira.length > 0    && !filterSira.includes(p.sira))       return false
+      if (filterBlok.length > 0 && !filterBlok.includes(p.blok)) return false
+      if (filterKoridor.length > 0   && !filterKoridor.includes(p.koridor))     return false
+      if (filterSutun.length > 0    && !filterSutun.includes(p.sutun))       return false
       if (filterKat.length > 0     && !filterKat.includes(p.kat))         return false
       return true
     })
     return sortRowsRedbull(result, sortType)
-  }, [koridorMatched, filterSearch, filterDurum, filterBina, filterKoridor, filterSutun, filterSira, filterKat, sortType])
+  }, [koridorMatched, filterSearch, filterDurum, filterBina, filterBlok, filterKoridor, filterSutun, filterKat, sortType])
 
   const filtered = useMemo(() => {
     if (!onlyDiff) return filteredBase
@@ -131,16 +138,16 @@ export default function RedbullKoridorSayim({ onNavigate }) {
   // Görev özeti: atanan (tüm filtreler uygulanmış) satırların gerçekten hangi
   // koridorlarda olduğu + koridor dışı aktif filtreler. `koridorlar` state'i
   // yerine filtered'dan türetilir ki ek filtreler daralttıysa özet de daralsın;
-  // koridor boyutu (filterKoridor) burada tekrar edilmez.
+  // koridor boyutu (filterBlok) burada tekrar edilmez.
   const gorevOzeti = useMemo(() => {
     const kor = [...new Set(filtered.map(r => getKoridor(r.adres, sablon)).filter(Boolean))]
       .sort((a, b) => a.localeCompare(b, 'tr', { numeric: true }))
     const korStr = kor.length
       ? `Koridor: ${kor.slice(0, 6).join(', ')}${kor.length > 6 ? ` +${kor.length - 6}` : ''}`
       : ''
-    return [korStr, buildFiltreOzeti({ filterSearch, filterDurum, filterBina, filterSutun, filterSira, filterKat })]
+    return [korStr, buildFiltreOzeti({ filterSearch, filterDurum, filterBina, filterSutun, filterKat })]
       .filter(Boolean).join(' · ')
-  }, [filtered, sablon, filterSearch, filterDurum, filterBina, filterSutun, filterSira, filterKat])
+  }, [filtered, sablon, filterSearch, filterDurum, filterBina, filterSutun, filterKat])
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -151,7 +158,7 @@ export default function RedbullKoridorSayim({ onNavigate }) {
         {/* Satır 1: Başlık + Aksiyon */}
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h1 className="text-[15px] font-bold text-slate-900">WMS Depo Sayım (Redbull) — Koridor Sayımı</h1>
+            <h1 className="text-[15px] font-bold text-slate-900">WMS Depo Sayım (Redbull) — Kör Raf Sayımı</h1>
             <p className="text-[11.5px] text-slate-400 mono">
               {filteredBase.length > 0
                 ? `${filteredBase.length.toLocaleString('tr')} kalem · %${Math.round(counted.length / filteredBase.length * 100)} sayıldı${diffCount > 0 ? ` · ${diffCount} fark` : ''}`
@@ -217,11 +224,13 @@ export default function RedbullKoridorSayim({ onNavigate }) {
             </div>
             <div className="flex flex-wrap gap-1.5 max-h-[84px] overflow-y-auto">
               {koridorlar.map(k => {
-                const adet = koridorSayilari[k]
+                const bar = k.indexOf('|')
+                const etiket = bar === -1 ? k : `${k.slice(0, bar)} › Sütun ${k.slice(bar + 1)}`
+                const adet = cipSayilari[k]
                 const notFound = !adet
                 return (
                   <div key={k} className={`flex items-center gap-1.5 pl-2 pr-1 py-0.5 rounded-md border text-[11.5px] ${notFound ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-blue-50 border-blue-200 text-blue-900'}`}>
-                    <span className="mono font-semibold">{k}</span>
+                    <span className="mono font-semibold">{etiket}</span>
                     {adet ? <><span className="text-slate-300">·</span><span className="text-slate-500">{adet.toLocaleString('tr')} kalem</span></> : null}
                     {notFound && <span className="text-amber-500 text-[10px]">bu oturumda yok</span>}
                     <button onClick={() => removeKoridor(k)} className="ml-0.5 flex items-center justify-center w-4 h-4 rounded hover:bg-red-100 text-slate-400 hover:text-red-500 transition-colors">
@@ -253,17 +262,17 @@ export default function RedbullKoridorSayim({ onNavigate }) {
           <span className="text-[11.5px] text-slate-400 font-medium">Filtre:</span>
           <MultiSelect placeholder="Tüm Durumlar"  options={filterOptions.durumlar}   value={filterDurum}   onChange={setFilterDurum} />
           <MultiSelect placeholder="Tüm Binalar"    options={filterOptions.binalar}    value={filterBina}    onChange={setFilterBina} />
+          <MultiSelect placeholder="Tüm Bloklar"    options={filterOptions.bloklar}    value={filterBlok}    onChange={setFilterBlok} />
           <MultiSelect placeholder="Tüm Koridorlar" options={filterOptions.koridorlar} value={filterKoridor} onChange={setFilterKoridor} />
           <MultiSelect placeholder="Tüm Sütunlar"   options={filterOptions.sutunlar}   value={filterSutun}   onChange={setFilterSutun} />
-          <MultiSelect placeholder="Tüm Sıralar"    options={filterOptions.siralar}    value={filterSira}    onChange={setFilterSira} />
           <MultiSelect placeholder="Tüm Katlar"     options={filterOptions.katlar}     value={filterKat}     onChange={setFilterKat} />
           <label className="flex items-center gap-1.5 text-[11.5px] text-slate-500 cursor-pointer ml-1">
             <input type="checkbox" checked={onlyDiff} onChange={e => setOnlyDiff(e.target.checked)} className="rounded" />
             Sadece farklılıklar
           </label>
-          {(filterDurum.length > 0 || filterBina.length > 0 || filterKoridor.length > 0 || filterSutun.length > 0 || filterSira.length > 0 || filterKat.length > 0 || filterSearch.trim()) && (
+          {(filterDurum.length > 0 || filterBina.length > 0 || filterBlok.length > 0 || filterKoridor.length > 0 || filterSutun.length > 0 || filterKat.length > 0 || filterSearch.trim()) && (
             <button
-              onClick={() => { setFilterSearch(''); setFilterDurum([]); setFilterBina([]); setFilterKoridor([]); setFilterSutun([]); setFilterSira([]); setFilterKat([]) }}
+              onClick={() => { setFilterSearch(''); setFilterDurum([]); setFilterBina([]); setFilterBlok([]); setFilterKoridor([]); setFilterSutun([]); setFilterKat([]) }}
               className="flex items-center gap-1 px-2 py-1 text-[11.5px] text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
             >
               <span className="ms" style={{ fontSize: 13 }}>filter_list_off</span> Temizle
@@ -272,8 +281,8 @@ export default function RedbullKoridorSayim({ onNavigate }) {
           <div className="ml-auto flex items-center gap-1.5">
             <span className="text-[11.5px] text-slate-400 font-medium">Sıra:</span>
             <select className="fsel" style={{ borderColor: '#93c5fd' }} value={sortType} onChange={e => setSortType(e.target.value)}>
-              <option value="1">Bina › Koridor › Sütun › Sıra › Kat</option>
-              <option value="2">Bina › Koridor › Sütun › Kat › Sıra</option>
+              <option value="1">Bina › Blok › Koridor › Sütun › Kat</option>
+              <option value="2">Bina › Blok › Koridor › Kat › Sütun</option>
             </select>
           </div>
         </div>
@@ -301,7 +310,7 @@ export default function RedbullKoridorSayim({ onNavigate }) {
           <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-sm">
             <span className="ms text-slate-300" style={{ fontSize: 32 }}>view_week</span>
           </div>
-          <div className="text-slate-600 font-semibold text-sm mb-1">Koridor Sayımı Başlatılmadı</div>
+          <div className="text-slate-600 font-semibold text-sm mb-1">Kör Raf Sayımı Başlatılmadı</div>
           <div className="text-slate-400 text-[13px]">Yukarıdan koridor seçin veya Raf Listesi'nden toplu aktarın</div>
         </div>
       ) : koridorMatched.length === 0 ? (
@@ -457,7 +466,7 @@ export default function RedbullKoridorSayim({ onNavigate }) {
       )}
 
       <div className="hidden">
-        <RedbullPrintSheet ref={printRef} rows={filtered} results={results} session={session} mode="kor" hideSistem={hideSistem} hideSayilan={hideSayilan} sayimTuru="Koridor Sayımı" firmaUnvani={firmaProfile?.unvan} />
+        <RedbullPrintSheet ref={printRef} rows={filtered} results={results} session={session} mode="kor" hideSistem={hideSistem} hideSayilan={hideSayilan} sayimTuru="Kör Raf Sayım" firmaUnvani={firmaProfile?.unvan} />
       </div>
 
       {gorevModal && (

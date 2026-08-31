@@ -447,7 +447,7 @@ export default function RedbullRapor({ onNavigate }) {
                       {row._kaya === 'kor'
                         ? <span className="badge bg-violet-100 text-violet-700 text-[10px]">Kör</span>
                         : row._kaya === 'koridor'
-                        ? <span className="badge bg-teal-100 text-teal-700 text-[10px]">Koridor</span>
+                        ? <span className="badge bg-teal-100 text-teal-700 text-[10px]">Kör Raf</span>
                         : <span className="badge bg-slate-100 text-slate-600 text-[10px]">Stok</span>}
                     </td>
                     <td className="px-3 py-1.5 mono text-slate-400 text-[10.5px]">{row.sscc || '—'}</td>

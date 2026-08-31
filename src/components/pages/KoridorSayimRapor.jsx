@@ -83,15 +83,15 @@ export default function KoridorSayimRapor({ onNavigate }) {
     return (
       <div className="flex flex-col gap-5">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">{firmaProfile?.unvan || firmaProfile?.ad || ''} Koridor Stok Sayım Raporu</h1>
-          <p className="text-[13px] text-slate-500 mt-0.5">Koridor sayım listesi henüz oluşturulmadı</p>
+          <h1 className="text-xl font-bold text-slate-900">{firmaProfile?.unvan || firmaProfile?.ad || ''} Kör Raf Sayım Raporu</h1>
+          <p className="text-[13px] text-slate-500 mt-0.5">Kör Raf sayım listesi henüz oluşturulmadı</p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
           <span className="ms text-slate-300 mb-3 block" style={{ fontSize: 48 }}>summarize</span>
           <div className="text-[14px] font-semibold text-slate-700 mb-1">Rapor Oluşturulamadı</div>
-          <div className="text-[13px] text-slate-400 mb-4">Önce Raf Listesi'nden koridor seçip Koridor Sayımı'na aktarın</div>
+          <div className="text-[13px] text-slate-400 mb-4">Önce Raf Listesi'nden koridor seçip Kör Raf Sayımı'na aktarın</div>
           <button onClick={() => onNavigate('koridorsayim')} className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[13px] font-semibold hover:bg-blue-700">
-            <span className="ms" style={{ fontSize: 16 }}>view_week</span> Koridor Sayımı Sayfasına Git
+            <span className="ms" style={{ fontSize: 16 }}>view_week</span> Kör Raf Sayımı Sayfasına Git
           </button>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default function KoridorSayimRapor({ onNavigate }) {
       {/* Başlık */}
       <div className="flex flex-wrap items-center justify-between gap-y-2">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">{firmaProfile?.unvan || firmaProfile?.ad || ''} Koridor Stok Sayım Raporu</h1>
+          <h1 className="text-xl font-bold text-slate-900">{firmaProfile?.unvan || firmaProfile?.ad || ''} Kör Raf Sayım Raporu</h1>
           <p className="text-[13px] text-slate-500 mt-0.5">Onaydan önce tüm farklılıkları inceleyin</p>
         </div>
         <div className="flex flex-wrap gap-2 no-print">
@@ -147,7 +147,7 @@ export default function KoridorSayimRapor({ onNavigate }) {
           <div className="text-[14px] font-semibold text-slate-700">Farklılık bulunamadı</div>
           <div className="text-[13px] text-slate-400 mt-1">
             {counted.length === 0
-              ? 'Henüz sayım yapılmamış. Koridor Stok Sayımı sayfasından başlayın.'
+              ? 'Henüz sayım yapılmamış. Kör Raf Sayımı sayfasından başlayın.'
               : 'Tüm sayılan kalemler sistem miktarıyla eşleşiyor.'}
           </div>
         </div>
