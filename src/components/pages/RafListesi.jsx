@@ -299,7 +299,7 @@ export default function RafListesi({ onNavigate }) {
                 <th className="px-3 py-2.5 w-10 text-center">
                   <input type="checkbox" checked={allSelected} onChange={toggleAll} className="rounded" />
                 </th>
-                <SortHeader label="Koridor" col="key" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="w-44" />
+                <SortHeader label={isRedbull ? 'Bina-Blok-Koridor' : 'Blok-Koridor'} col="key" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} className="w-48" />
                 <SortHeader label="SKU Sayısı" col="skuSayisi" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" className="w-32" />
                 <SortHeader label="Lokasyon" col="lokasyonSayisi" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" className="w-32" />
                 <SortHeader label="Toplam Sistem" col="miktar" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" className="w-36" />

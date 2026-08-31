@@ -43,14 +43,13 @@ export function parseAdres(adres) {
 
 /**
  * Bir adresin ait olduğu koridor anahtarı — Raf Listesi / Kör Raf Sayım
- * gruplama-eşleştirme birimi. Blok + Koridor bileşiği (aynı koridor kodu farklı
- * bloklarda olabilir). Redbull'da Bina bileşiğe girmez (ayrı filtre).
- *   1-AL-05-3        → "1-AL"
- *   4-09L-10-1-1     → "09L-10"
+ * gruplama-eşleştirme birimi. Adresin Sütun'a kadarki ön eki:
+ *   4 parça (LOS Depo / WMS Antrepo): Blok-Koridor        → "1-AL"
+ *   5 parça (WMS Depo / Redbull):     Bina-Blok-Koridor   → "4-09L-10"
  */
 export function getKoridor(adres, sablon) {
   const p = sablon === SABLON.WMS_REDBULL ? parseAdresRedbull(adres) : parseAdres(adres)
-  return [p.blok, p.koridor].filter(Boolean).join('-')
+  return [p.bina, p.blok, p.koridor].filter(Boolean).join('-')
 }
 
 /** Bir adresin "Sütun" bileşeni (Raf Listesi'nde koridor altındaki alt kırılım). */
