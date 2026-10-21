@@ -186,7 +186,7 @@ export default function RedbullKorSayim({ onNavigate }) {
               onChange={e => setCodeInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleEkle()}
               placeholder="Stok kodu girin veya yapıştırın (boşluk, virgül, satır ile ayırın)…"
-              className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-[12.5px] mono focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-[12.5px] mono focus:outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             />
           </div>
           <button
@@ -237,7 +237,7 @@ export default function RedbullKorSayim({ onNavigate }) {
               value={filterSearch}
               onChange={e => setFilterSearch(e.target.value)}
               placeholder="Stok Kodu / Ad / Lot ara…"
-              className="pl-7 pr-7 py-1 border border-slate-200 rounded-lg text-[12px] focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 w-52"
+              className="pl-7 pr-7 py-1 border border-slate-200 rounded-lg text-[12px] focus:outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100 w-52"
             />
             {filterSearch && (
               <button onClick={() => setFilterSearch('')} className="ms absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500" style={{ fontSize: 14 }}>close</button>
@@ -291,7 +291,7 @@ export default function RedbullKorSayim({ onNavigate }) {
       {/* ── Tablo ── */}
       {korCodes.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center bg-slate-50">
-          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-xs">
             <span className="ms text-slate-300" style={{ fontSize: 32 }}>visibility_off</span>
           </div>
           <div className="text-slate-600 font-semibold text-sm mb-1">Kör Sayım Başlatılmadı</div>
@@ -366,7 +366,7 @@ export default function RedbullKorSayim({ onNavigate }) {
                         onChange={e => updateResult(row.id, { notlar: e.target.value })}
                         placeholder="not..."
                         disabled={locked}
-                        className="w-full bg-transparent border-none text-[12px] text-slate-400 placeholder-slate-300 outline-none disabled:cursor-not-allowed"
+                        className="w-full bg-transparent border-none text-[12px] text-slate-400 placeholder-slate-300 outline-hidden disabled:cursor-not-allowed"
                       />
                     </td>
                   </tr>

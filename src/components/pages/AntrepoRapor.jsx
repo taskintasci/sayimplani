@@ -343,7 +343,7 @@ export default function AntrepoRapor({ onNavigate }) {
                   value={form.parti}
                   onChange={e => setForm(f => ({ ...f, parti: e.target.value }))}
                   placeholder="26410500AN..."
-                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                 />
               </div>
             </div>
@@ -356,7 +356,7 @@ export default function AntrepoRapor({ onNavigate }) {
                     value={form.miktar}
                     onChange={e => setForm(f => ({ ...f, miktar: e.target.value }))}
                     placeholder="0"
-                    className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                    className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                     required
                   />
                   <input
@@ -376,7 +376,7 @@ export default function AntrepoRapor({ onNavigate }) {
                   value={form.not}
                   onChange={e => setForm(f => ({ ...f, not: e.target.value }))}
                   placeholder="Açıklama..."
-                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] focus:outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                 />
               </div>
               <div className="flex items-end">

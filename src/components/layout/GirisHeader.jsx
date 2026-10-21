@@ -24,7 +24,7 @@ export default function GirisHeader({ activePage, onNavigate }) {
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <FirmaSwitcher
           onNavigate={onNavigate}
-          className="border border-slate-300 rounded-lg px-2 py-1.5 text-[12px] text-slate-700 bg-white focus:outline-none focus:border-blue-400"
+          className="border border-slate-300 rounded-lg px-2 py-1.5 text-[12px] text-slate-700 bg-white focus:outline-hidden focus:border-blue-400"
         />
 
         {ayarlarErisebilir && (

@@ -99,21 +99,21 @@ export default function FirmaYonetimi() {
             <input type="text" value={form.ad}
               onChange={e => setForm(f => ({ ...f, ad: e.target.value }))}
               placeholder="Örn: Yeni Firma A.Ş."
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Yasal Unvan (yazdırma/export'ta kullanılır)</label>
             <input type="text" value={form.unvan}
               onChange={e => setForm(f => ({ ...f, unvan: e.target.value }))}
               placeholder="Örn: YENİ FİRMA SAN. TİC. A.Ş."
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Kısa Kod (sayım numarasında)</label>
             <input type="text" value={form.kisaKod} maxLength={5}
               onChange={e => setForm(f => ({ ...f, kisaKod: e.target.value.toUpperCase() }))}
               placeholder={firmaKisaKod({ ad: form.ad }) + ' (otomatik)'}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm mono uppercase focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm mono uppercase focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
           </div>
           <div className="flex items-end pb-2.5 text-xs text-slate-400">
             Örnek sayım no: <span className="mono text-slate-600 ml-1">20260911{firmaKisaKod(form)}000001</span>
@@ -186,23 +186,23 @@ export default function FirmaYonetimi() {
                   <td className="px-5 py-3">
                     <input type="text" value={editForm.ad}
                       onChange={e => setEditForm(x => ({ ...x, ad: e.target.value }))}
-                      className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+                      className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
                   </td>
                   <td className="px-5 py-3">
                     <input type="text" value={editForm.unvan}
                       onChange={e => setEditForm(x => ({ ...x, unvan: e.target.value }))}
-                      className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+                      className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
                   </td>
                   <td className="px-5 py-3">
                     <input type="text" value={editForm.kisaKod} maxLength={5}
                       onChange={e => setEditForm(x => ({ ...x, kisaKod: e.target.value.toUpperCase() }))}
                       placeholder={firmaKisaKod({ ad: editForm.ad })}
-                      className="w-20 border border-slate-300 rounded-lg px-2 py-1.5 text-xs mono uppercase focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+                      className="w-20 border border-slate-300 rounded-lg px-2 py-1.5 text-xs mono uppercase focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
                   </td>
                   <td className="px-5 py-3">
                     <select value={editForm.sablon}
                       onChange={e => setEditForm(x => ({ ...x, sablon: e.target.value }))}
-                      className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200">
+                      className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200">
                       {SABLON_OPTIONS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                     </select>
                   </td>

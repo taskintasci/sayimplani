@@ -9,7 +9,7 @@ export default function Logo({ onClick }) {
 
   return (
     <button onClick={onClick} className="flex items-center gap-2.5 min-w-0">
-      <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 shadow-sm shadow-blue-600/30">
+      <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 shadow-xs shadow-blue-600/30">
         <span className="ms text-white" style={{ fontSize: 19 }}>warehouse</span>
       </div>
       <div className="text-left leading-tight min-w-0">

@@ -298,7 +298,7 @@ export default function RedbullKoridorSayimRapor({ onNavigate }) {
                   value={form.parti}
                   onChange={e => setForm(f => ({ ...f, parti: e.target.value }))}
                   placeholder="2541388"
-                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                 />
               </div>
               <div>
@@ -308,7 +308,7 @@ export default function RedbullKoridorSayimRapor({ onNavigate }) {
                   value={form.skt}
                   onChange={e => setForm(f => ({ ...f, skt: e.target.value }))}
                   placeholder="31.12.2026"
-                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                 />
               </div>
               <div>
@@ -328,7 +328,7 @@ export default function RedbullKoridorSayimRapor({ onNavigate }) {
                   value={form.durum}
                   onChange={e => setForm(f => ({ ...f, durum: e.target.value }))}
                   placeholder="Normal / İade..."
-                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] focus:outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                 />
               </div>
             </div>
@@ -341,7 +341,7 @@ export default function RedbullKoridorSayimRapor({ onNavigate }) {
                     value={form.miktar}
                     onChange={e => setForm(f => ({ ...f, miktar: e.target.value }))}
                     placeholder="0"
-                    className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                    className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                     required
                   />
                   <input
@@ -361,7 +361,7 @@ export default function RedbullKoridorSayimRapor({ onNavigate }) {
                   value={form.not}
                   onChange={e => setForm(f => ({ ...f, not: e.target.value }))}
                   placeholder="Açıklama..."
-                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] focus:outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
                 />
               </div>
               <div className="flex items-end">

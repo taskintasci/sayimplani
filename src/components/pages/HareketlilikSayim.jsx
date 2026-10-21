@@ -196,7 +196,7 @@ export default function HareketlilikSayim({ onNavigate }) {
               value={filterSearch}
               onChange={e => setFilterSearch(e.target.value)}
               placeholder="Kod / Ad / Parti ara…"
-              className="pl-7 pr-7 py-1 border border-slate-200 rounded-lg text-[12px] focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 w-44"
+              className="pl-7 pr-7 py-1 border border-slate-200 rounded-lg text-[12px] focus:outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100 w-44"
             />
             {filterSearch && (
               <button
@@ -247,7 +247,7 @@ export default function HareketlilikSayim({ onNavigate }) {
       {/* ── Tablo ── */}
       {rows.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center bg-slate-50">
-          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-xs">
             <span className="ms text-slate-300" style={{ fontSize: 32 }}>upload_file</span>
           </div>
           <div className="text-slate-600 font-semibold text-sm mb-1">Henüz dosya yüklenmedi</div>
@@ -322,7 +322,7 @@ export default function HareketlilikSayim({ onNavigate }) {
                         onChange={e => updateResult(row.id, { notlar: e.target.value })}
                         placeholder="not..."
                         disabled={locked}
-                        className="w-full bg-transparent border-none text-[12px] text-slate-400 placeholder-slate-300 outline-none disabled:cursor-not-allowed"
+                        className="w-full bg-transparent border-none text-[12px] text-slate-400 placeholder-slate-300 outline-hidden disabled:cursor-not-allowed"
                       />
                     </td>
                   </tr>

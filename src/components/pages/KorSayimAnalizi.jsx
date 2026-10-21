@@ -103,7 +103,7 @@ export default function KorSayimAnalizi({ onNavigate }) {
       </div>
 
       {/* Genel Doğruluk — Büyük Kart */}
-      <div className="bg-gradient-to-br from-blue-700 to-blue-900 rounded-2xl p-4 md:p-6 flex flex-col md:flex-row items-stretch md:items-center gap-6 md:gap-8">
+      <div className="bg-linear-to-br from-blue-700 to-blue-900 rounded-2xl p-4 md:p-6 flex flex-col md:flex-row items-stretch md:items-center gap-6 md:gap-8">
         <div className="shrink-0">
           <p className="text-blue-200 text-[12px] mono uppercase tracking-widest mb-1">Kör Sayım Genel Doğruluk</p>
           <p className="text-white font-black leading-none" style={{ fontSize: 52 }}>%{genelPct.toLocaleString('tr', { maximumFractionDigits: 2 })}</p>

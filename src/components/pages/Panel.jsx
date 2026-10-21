@@ -175,7 +175,7 @@ export default function Panel({ onNavigate }) {
       {/* 4 İstatistik Kartı */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Lokasyon */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 relative overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 relative overflow-hidden hover:border-slate-300 hover:shadow-xs transition-all">
           <div className="absolute top-0 left-0 w-1 h-full bg-slate-400 rounded-l-xl" />
           <div className="flex items-start justify-between mb-2">
             <p className="text-[11px] text-slate-400 mono uppercase tracking-wide">Lokasyon</p>
@@ -187,7 +187,7 @@ export default function Panel({ onNavigate }) {
           <p className="text-[12px] text-slate-400 mt-1">Toplam Lokasyon</p>
         </div>
         {/* Sayılan */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 relative overflow-hidden hover:border-blue-200 hover:shadow-sm transition-all">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 relative overflow-hidden hover:border-blue-200 hover:shadow-xs transition-all">
           <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 rounded-l-xl" />
           <div className="flex items-start justify-between mb-2">
             <p className="text-[11px] text-slate-400 mono uppercase tracking-wide">Sayılan</p>
@@ -209,7 +209,7 @@ export default function Panel({ onNavigate }) {
           )}
         </div>
         {/* Farklılık */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 relative overflow-hidden hover:border-red-200 hover:shadow-sm transition-all">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 relative overflow-hidden hover:border-red-200 hover:shadow-xs transition-all">
           <div className="absolute top-0 left-0 w-1 h-full bg-red-400 rounded-l-xl" />
           <div className="flex items-start justify-between mb-2">
             <p className="text-[11px] text-slate-400 mono uppercase tracking-wide">Farklılık</p>
@@ -221,7 +221,7 @@ export default function Panel({ onNavigate }) {
           <p className="text-[12px] text-slate-400 mt-1">İncelenmeli</p>
         </div>
         {/* Onaylanan */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 relative overflow-hidden hover:border-emerald-200 hover:shadow-sm transition-all">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 relative overflow-hidden hover:border-emerald-200 hover:shadow-xs transition-all">
           <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 rounded-l-xl" />
           <div className="flex items-start justify-between mb-2">
             <p className="text-[11px] text-slate-400 mono uppercase tracking-wide">Onaylanan</p>
@@ -245,7 +245,7 @@ export default function Panel({ onNavigate }) {
           onChange={e => updateSessionNote(e.target.value)}
           placeholder="Bu sayımla ilgili not ekleyin…"
           rows={3}
-          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none"
+          className="w-full border border-slate-200 rounded-lg px-3 py-2 text-[13px] text-slate-700 placeholder-slate-400 focus:outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none"
         />
       </div>
 

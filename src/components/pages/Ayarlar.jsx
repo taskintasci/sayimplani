@@ -82,26 +82,26 @@ function KullaniciTab() {
             <input type="text" value={form.displayName}
               onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))}
               placeholder="Örn: Ahmet Yılmaz"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">E-posta</label>
             <input type="email" value={form.email}
               onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
               placeholder="ornek@sirket.com" autoComplete="off"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Şifre</label>
             <input type="password" value={form.password}
               onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
               placeholder="En az 6 karakter" autoComplete="new-password"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Rol</label>
             <select value={form.rol} onChange={e => setForm(f => ({ ...f, rol: e.target.value }))}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200">
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200">
               {roleOptions.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
             </select>
           </div>
@@ -159,7 +159,7 @@ function KullaniciTab() {
                       <select value={u.rol || 'sayimci'} disabled={isSelf}
                         onChange={e => updateUserRole(u.uid, e.target.value)}
                         className={
-                          'text-xs font-semibold rounded-md px-2 py-1 border-0 focus:outline-none focus:ring-1 focus:ring-blue-300 ' +
+                          'text-xs font-semibold rounded-md px-2 py-1 border-0 focus:outline-hidden focus:ring-1 focus:ring-blue-300 ' +
                           (ROLE_BADGE[u.rol] || 'bg-slate-100 text-slate-600') +
                           (isSelf ? ' opacity-60 cursor-not-allowed' : ' cursor-pointer')
                         }>
@@ -249,7 +249,7 @@ export default function Ayarlar() {
           <button key={t.id} onClick={() => setTab(t.id)}
             className={
               'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ' +
-              (tab === t.id ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700')
+              (tab === t.id ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-700')
             }>
             <span className="ms" style={{ fontSize: 16 }}>{t.icon}</span>
             {t.label}
@@ -273,27 +273,27 @@ export default function Ayarlar() {
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Depo Kodu / Depo Adı / Blok Numarası</label>
             <input type="text" value={session.depoAdi || ''}
               onChange={e => setSession({ depoAdi: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" />
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Sayım Başlığı</label>
             <input type="text" value={session.sayimBasligi || ''}
               onChange={e => setSession({ sayimBasligi: e.target.value })}
               placeholder="Örn: YIL SONU SAYIM"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" />
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Sorumlu Kişi</label>
             <input type="text" value={session.sorumlu || ''}
               onChange={e => setSession({ sorumlu: e.target.value })}
               placeholder="Ad Soyad"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" />
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Sayım Tarihi</label>
             <input type="date" value={session.tarih || ''}
               onChange={e => setSession({ tarih: e.target.value })}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 mono focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" />
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-800 mono focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200 transition-colors" />
           </div>
           <button onClick={handleSave}
             className={

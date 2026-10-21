@@ -10,7 +10,7 @@ export default function Toast() {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-[70] flex justify-center px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pointer-events-none print:hidden"
+      className="fixed inset-x-0 bottom-0 z-70 flex justify-center px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pointer-events-none print:hidden"
       aria-live="polite"
       aria-atomic="true"
     >

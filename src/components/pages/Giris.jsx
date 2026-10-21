@@ -50,7 +50,7 @@ function SessionCard({ s, selectedId, setSelectedId, deletingId, setDeletingId, 
         'w-full text-left rounded-xl p-4 border transition-all cursor-pointer ' +
         (selectedId === s.id
           ? 'bg-blue-50 border-blue-400 ring-1 ring-blue-400'
-          : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm')
+          : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs')
       }
     >
       <div className="flex items-start justify-between mb-1">
@@ -296,7 +296,7 @@ export default function Giris({ onNavigate }) {
                       'flex items-center gap-3 p-3 rounded-xl border text-left transition-all ' +
                       (newType === t.id
                         ? 'bg-blue-50 border-blue-400 ring-1 ring-blue-400'
-                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm')
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs')
                     }
                   >
                     <div className={
@@ -326,7 +326,7 @@ export default function Giris({ onNavigate }) {
                   value={depoAdi}
                   onChange={e => setDepoAdi(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleCreate()}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-slate-900 text-sm placeholder-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
               <div>
@@ -335,7 +335,7 @@ export default function Giris({ onNavigate }) {
                   type="date"
                   value={tarih}
                   onChange={e => setTarih(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-slate-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-slate-900 text-sm focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
             </div>

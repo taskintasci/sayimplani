@@ -71,7 +71,7 @@ export default function ProfilPanel() {
             value={displayName}
             onChange={e => setDisplayName(e.target.value)}
             placeholder="Ad Soyad"
-            className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
           />
           {nameErr && <div className="text-red-600 text-xs">{nameErr}</div>}
           {nameMsg && <div className="text-emerald-600 text-xs">{nameMsg}</div>}
@@ -99,7 +99,7 @@ export default function ProfilPanel() {
               value={currentPassword}
               onChange={e => setCurrentPassword(e.target.value)}
               autoComplete="current-password"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
             />
           </div>
           <div>
@@ -110,7 +110,7 @@ export default function ProfilPanel() {
               onChange={e => setNewPassword(e.target.value)}
               autoComplete="new-password"
               placeholder="En az 6 karakter"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
             />
           </div>
           <div>
@@ -120,7 +120,7 @@ export default function ProfilPanel() {
               value={newPassword2}
               onChange={e => setNewPassword2(e.target.value)}
               autoComplete="new-password"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
             />
           </div>
           {passErr && <div className="text-red-600 text-xs">{passErr}</div>}

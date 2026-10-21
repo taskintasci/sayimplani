@@ -1,8 +1,126 @@
 /* Fontlar index.html <link> etiketleriyle yükleniyor — buradaki @import'lar kaldırıldı */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-background: #f9f9fc;
+  --color-surface: #f9f9fc;
+  --color-surface-dim: #dadadc;
+  --color-surface-bright: #f9f9fc;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f3f6;
+  --color-surface-container: #eeeef0;
+  --color-surface-container-high: #e8e8ea;
+  --color-surface-container-highest: #e2e2e5;
+  --color-surface-variant: #e2e2e5;
+  --color-surface-tint: #005db6;
+  --color-on-surface: #1a1c1e;
+  --color-on-surface-variant: #424752;
+  --color-on-background: #1a1c1e;
+  --color-outline: #727783;
+  --color-outline-variant: #c2c6d4;
+  --color-inverse-surface: #2f3133;
+  --color-inverse-on-surface: #f0f0f3;
+  --color-primary: #00478d;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #005eb8;
+  --color-on-primary-container: #c8daff;
+  --color-primary-fixed: #d6e3ff;
+  --color-primary-fixed-dim: #a9c7ff;
+  --color-on-primary-fixed: #001b3d;
+  --color-on-primary-fixed-variant: #00468c;
+  --color-inverse-primary: #a9c7ff;
+  --color-secondary: #7d5700;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #feb71a;
+  --color-on-secondary-container: #6b4b00;
+  --color-secondary-fixed: #ffdeaa;
+  --color-secondary-fixed-dim: #ffba2c;
+  --color-on-secondary-fixed: #271900;
+  --color-on-secondary-fixed-variant: #5f4100;
+  --color-tertiary: #940018;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #c10023;
+  --color-on-tertiary-container: #ffcecb;
+  --color-tertiary-fixed: #ffdad7;
+  --color-tertiary-fixed-dim: #ffb3af;
+  --color-on-tertiary-fixed: #410005;
+  --color-on-tertiary-fixed-variant: #930018;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --radius: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+  --radius-full: 0.75rem;
+
+  --font-label-md: 'JetBrains Mono', monospace;
+  --font-label-sm: 'JetBrains Mono', monospace;
+  --font-headline-lg: Figtree, sans-serif;
+  --font-headline-md: Figtree, sans-serif;
+  --font-headline-sm: Figtree, sans-serif;
+  --font-body-lg: Figtree, sans-serif;
+  --font-body-md: Figtree, sans-serif;
+
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--letter-spacing: 0.05em;
+  --text-label-md--font-weight: 500;
+  --text-label-sm: 10px;
+  --text-label-sm--line-height: 14px;
+  --text-label-sm--letter-spacing: 0.05em;
+  --text-label-sm--font-weight: 500;
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-lg--font-weight: 700;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--letter-spacing: -0.01em;
+  --text-headline-md--font-weight: 600;
+  --text-headline-sm: 20px;
+  --text-headline-sm--line-height: 28px;
+  --text-headline-sm--font-weight: 600;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-lg--font-weight: 400;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-md--font-weight: 400;
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+
+  /* v4 preflight bu iki varsayılanı da değiştirdi (v3 davranışı korunuyor). */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
 
 /* ── Design Tokens ──────────────────────────────────────────────────────── */
 :root {

@@ -424,7 +424,7 @@ export default function SayimciEkran({ mode = 'self' }) {
                   const isDeleting = deletingId === g.id
 
                   return (
-                    <div key={g.id} className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm active:scale-[0.99] transition-all p-5">
+                    <div key={g.id} className="rounded-2xl border border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs active:scale-[0.99] transition-all p-5">
                       {isDeleting ? (
                         <div className="flex items-center justify-between">
                           <p className="text-slate-800 text-sm font-semibold">Bu görevi silmek istediğinizden emin misiniz?</p>
@@ -589,14 +589,14 @@ export default function SayimciEkran({ mode = 'self' }) {
               value={listeSearch}
               onChange={e => setListeSearch(e.target.value)}
               placeholder="Kod / Ad ara…"
-              className="w-full pl-8 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-400"
+              className="w-full pl-8 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:outline-hidden focus:border-blue-400"
             />
           </div>
           {!isMembran && (
             <select
               value={sortType}
               onChange={e => setSortType(e.target.value)}
-              className="bg-white border border-slate-300 rounded-lg px-2.5 py-2.5 text-xs text-slate-600 focus:outline-none focus:border-blue-400 shrink-0"
+              className="bg-white border border-slate-300 rounded-lg px-2.5 py-2.5 text-xs text-slate-600 focus:outline-hidden focus:border-blue-400 shrink-0"
               style={{ minHeight: 44 }}
             >
               {isRedbull ? (
@@ -714,7 +714,7 @@ export default function SayimciEkran({ mode = 'self' }) {
                                 {isDiff && <span className="ms text-red-400" style={{ fontSize: 14 }}>warning</span>}
                               </div>
                             </td>
-                            <td className="px-3 py-2"><input type="text" value={res.notlar ?? ''} onChange={e => updateResult(row.id, { notlar: e.target.value })} placeholder="not..." disabled={locked} className="w-full bg-transparent border-none text-[12px] text-slate-400 placeholder-slate-300 outline-none min-w-[60px] disabled:cursor-not-allowed" /></td>
+                            <td className="px-3 py-2"><input type="text" value={res.notlar ?? ''} onChange={e => updateResult(row.id, { notlar: e.target.value })} placeholder="not..." disabled={locked} className="w-full bg-transparent border-none text-[12px] text-slate-400 placeholder-slate-300 outline-hidden min-w-[60px] disabled:cursor-not-allowed" /></td>
                           </tr>
                         )
                       }) : [])
@@ -747,7 +747,7 @@ export default function SayimciEkran({ mode = 'self' }) {
                           </div>
                         </td>
                         <td className="px-3 py-2 mono text-slate-500 text-[11.5px]">{row.birim}</td>
-                        <td className="px-3 py-2"><input type="text" value={res.notlar ?? ''} onChange={e => updateResult(row.id, { notlar: e.target.value })} placeholder="not..." disabled={locked} className="w-full bg-transparent border-none text-[12px] text-slate-400 placeholder-slate-300 outline-none min-w-[60px] disabled:cursor-not-allowed" /></td>
+                        <td className="px-3 py-2"><input type="text" value={res.notlar ?? ''} onChange={e => updateResult(row.id, { notlar: e.target.value })} placeholder="not..." disabled={locked} className="w-full bg-transparent border-none text-[12px] text-slate-400 placeholder-slate-300 outline-hidden min-w-[60px] disabled:cursor-not-allowed" /></td>
                       </tr>
                     )
                   })
@@ -841,7 +841,7 @@ export default function SayimciEkran({ mode = 'self' }) {
               onKeyDown={e => e.key === 'Enter' && editKaydet()}
               placeholder={`Sistem: ${current.sayim ?? '—'}`}
               disabled={locked}
-              className="w-full bg-white border border-slate-300 rounded-2xl px-5 py-4 text-slate-900 text-3xl font-bold mono text-center focus:outline-none focus:border-amber-400 mb-4 disabled:opacity-40"
+              className="w-full bg-white border border-slate-300 rounded-2xl px-5 py-4 text-slate-900 text-3xl font-bold mono text-center focus:outline-hidden focus:border-amber-400 mb-4 disabled:opacity-40"
             />
 
             <label className="block text-slate-600 text-sm mb-2">Not (opsiyonel)</label>
@@ -851,7 +851,7 @@ export default function SayimciEkran({ mode = 'self' }) {
               placeholder="Açıklama, fark nedeni..."
               rows={2}
               disabled={locked}
-              className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-800 text-sm focus:outline-none focus:border-amber-400 resize-none disabled:opacity-40"
+              className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-800 text-sm focus:outline-hidden focus:border-amber-400 resize-none disabled:opacity-40"
             />
 
             <div className="flex gap-3 mt-5">
@@ -1172,19 +1172,19 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isKoridor, isRe
             <div className="flex-1">
               <label className="block text-xs font-medium text-slate-500 mb-1">{isRedbull ? 'Lot' : 'Parti'}</label>
               <input value={form.parti} onChange={e => setForm(f => ({ ...f, parti: e.target.value }))}
-                type="text" placeholder={isRedbull ? '2541388' : 'PT240101'} className="w-full border border-slate-300 rounded-xl px-4 py-3 mono text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400" />
+                type="text" placeholder={isRedbull ? '2541388' : 'PT240101'} className="w-full border border-slate-300 rounded-xl px-4 py-3 mono text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-blue-400" />
             </div>
             <div className="flex-1">
               <label className="block text-xs font-medium text-slate-500 mb-1">{isRedbull ? 'Alisan Statu' : 'Durum'}</label>
               <input value={form.durum} onChange={e => setForm(f => ({ ...f, durum: e.target.value }))}
-                type="text" placeholder={isRedbull ? 'Normal / İade...' : 'Serbest / KK...'} className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400" />
+                type="text" placeholder={isRedbull ? 'Normal / İade...' : 'Serbest / KK...'} className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-blue-400" />
             </div>
           </div>
           {isRedbull && (
             <div>
               <label className="block text-xs font-medium text-slate-500 mb-1">SKT</label>
               <input value={form.skt} onChange={e => setForm(f => ({ ...f, skt: e.target.value }))}
-                type="text" placeholder="31.12.2026" className="w-full border border-slate-300 rounded-xl px-4 py-3 mono text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400" />
+                type="text" placeholder="31.12.2026" className="w-full border border-slate-300 rounded-xl px-4 py-3 mono text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-blue-400" />
             </div>
           )}
           <div className="flex gap-3">
@@ -1192,7 +1192,7 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isKoridor, isRe
               <label className="block text-xs font-medium text-slate-500 mb-1">Sayılan Miktar *</label>
               <input value={form.miktar} onChange={e => setForm(f => ({ ...f, miktar: e.target.value }))}
                 type="number" inputMode="decimal" placeholder="0" style={{ lineHeight: 1.4 }}
-                className="no-spinner w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 mono placeholder-slate-400 focus:outline-none focus:border-blue-400" />
+                className="no-spinner w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 mono placeholder-slate-400 focus:outline-hidden focus:border-blue-400" />
             </div>
             <div className="w-24">
               <label className="block text-xs font-medium text-slate-500 mb-1">Birim</label>
@@ -1203,7 +1203,7 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isKoridor, isRe
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">Not (opsiyonel)</label>
             <input value={form.not} onChange={e => setForm(f => ({ ...f, not: e.target.value }))}
-              type="text" placeholder="Açıklama..." className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400" />
+              type="text" placeholder="Açıklama..." className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-hidden focus:border-blue-400" />
           </div>
           <button type="submit" disabled={!matchedSku || form.miktar === '' || !adresGecerli}
             className="py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-white font-bold flex items-center justify-center gap-2 mt-1">

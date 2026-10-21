@@ -49,7 +49,7 @@ export default function Login() {
         </div>
 
         {/* Kart */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-xs">
           <h1 className="text-slate-800 font-semibold text-lg mb-6 text-center">Giriş Yap</h1>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -61,7 +61,7 @@ export default function Login() {
                 onChange={e => setEmail(e.target.value)}
                 placeholder="ornek@sirket.com"
                 required
-                className="w-full border border-slate-300 rounded-lg px-3 py-3 text-slate-900 text-base placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className="w-full border border-slate-300 rounded-lg px-3 py-3 text-slate-900 text-base placeholder-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
             <div>
@@ -72,7 +72,7 @@ export default function Login() {
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="w-full border border-slate-300 rounded-lg px-3 py-3 text-slate-900 text-base placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                className="w-full border border-slate-300 rounded-lg px-3 py-3 text-slate-900 text-base placeholder-slate-400 focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
 

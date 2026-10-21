@@ -243,7 +243,7 @@ export default function RafListesi({ onNavigate }) {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Kod / Ad / Parti ara…"
-              className="w-52 pl-9 pr-7 py-1.5 border border-slate-200 rounded-lg text-[12.5px] focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              className="w-52 pl-9 pr-7 py-1.5 border border-slate-200 rounded-lg text-[12.5px] focus:outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             />
             {search && (
               <button onClick={() => setSearch('')} className="ms absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500" style={{ fontSize: 15 }}>close</button>
@@ -285,7 +285,7 @@ export default function RafListesi({ onNavigate }) {
         <div className="flex-1 flex items-center justify-center text-slate-400 text-[13px]">Yükleniyor…</div>
       ) : rows.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center bg-slate-50">
-          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-xs">
             <span className="ms text-slate-300" style={{ fontSize: 32 }}>upload_file</span>
           </div>
           <div className="text-slate-600 font-semibold text-sm mb-1">Henüz veri yüklenmedi</div>
