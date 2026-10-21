@@ -20,6 +20,7 @@ const RafListesi      = lazy(() => import('./components/pages/RafListesi'))
 const Rapor           = lazy(() => import('./components/pages/Rapor'))
 const SayimAnalizi    = lazy(() => import('./components/pages/SayimAnalizi'))
 const KorSayimAnalizi = lazy(() => import('./components/pages/KorSayimAnalizi'))
+const SayimPerformansi = lazy(() => import('./components/pages/SayimPerformansi'))
 const KorSayimRapor       = lazy(() => import('./components/pages/KorSayimRapor'))
 const HareketlilikSayim   = lazy(() => import('./components/pages/HareketlilikSayim'))
 const MembranSayim        = lazy(() => import('./components/pages/MembranSayim'))
@@ -58,6 +59,9 @@ const PAGES = {
   sayim:     { Component: StokSayim,        fullHeight: true,  roles: YON, sablon: [SABLON.STANDART] },
   analiz:    { Component: SayimAnalizi,     fullHeight: false, roles: YON_KONT, sablon: [SABLON.STANDART] },
   rapor:     { Component: Rapor,            fullHeight: false, roles: YON_KONT, sablon: [SABLON.STANDART] },
+  performans:        { Component: SayimPerformansi, fullHeight: false, roles: YON_KONT, sablon: [SABLON.STANDART] },
+  antrepoperformans: { Component: SayimPerformansi, fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS31] },
+  redbullperformans: { Component: SayimPerformansi, fullHeight: false, roles: YON_KONT, sablon: [SABLON.WMS_REDBULL] },
   skuliste:  { Component: SkuListesi,       fullHeight: true,  roles: YON, sablon: [SABLON.STANDART] },
   rafliste:  { Component: RafListesi,       fullHeight: true,  roles: YON, sablon: [SABLON.STANDART] },
   kor:       { Component: KorSayim,         fullHeight: true,  roles: YON, sablon: [SABLON.STANDART] },

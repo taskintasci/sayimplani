@@ -1,4 +1,8 @@
 import { skuDogrulukSayilari } from './analizUtils'
+import {
+  HIZLI_ONAY_SN, MOLA_SN, LOG_ROL, logSayi, tsDate, medyan,
+  logKisiOzeti, kisiDegerlendirme, gorevOzeti, izGuvenilir, sayildiMi,
+} from './performansUtils'
 
 // Not: sayım sonucu çıktılarında "Onay Durumu" hücresi `res.status` boşken
 // miktar doluysa 'Sayıldı' olarak türetilir. 2026-09-01'den önce bu damgayı
@@ -787,10 +791,8 @@ export async function exportRedbullResults(rows, results, session, firma = {}, m
 // clearMiktarlar / add*ManualRow yazar). Amaç, sayımcının kalemleri gerçekten
 // sayıp saymadığını görmek: kart modundaki "Onayla" sistem miktarını tek
 // dokunuşla yazdığı için, art arda birkaç saniye arayla gelen onaylar
-// fiziksel sayım yapılmadığına işaret eder.
-const HIZLI_ONAY_SN = 3          // bundan kısa aralıkla gelen "Onayla" = hızlı onay
-const MOLA_SN       = 10 * 60    // bundan uzun ara aktif süreye sayılmaz (mola/yürüme dışı)
-
+// fiziksel sayım yapılmadığına işaret eder. Hesaplar performansUtils'te
+// (Sayım Performansı sayfası da aynılarını kullanır).
 const LOG_EYLEM = {
   onayla:          'Onayla (sistem miktarı)',
   duzenle:         'Eksik/Fazla (elle miktar)',
@@ -802,14 +804,6 @@ const LOG_EYLEM = {
   manuelEkle:      'Manuel fazla stok',
 }
 const LOG_EKRAN = { kart: 'Sayımcı kartı', liste: 'Sayımcı listesi', tablo: 'Sayım tablosu', manuel: 'Manuel ekleme' }
-const LOG_ROL   = { sayimci: 'Sayımcı', yonetici: 'Yönetici', superadmin: 'Süper Yönetici', kontrolcu: 'Kontrolcü' }
-const SAYIM_EYLEMLERI = new Set(['onayla', 'duzenle', 'elle'])
-
-const logSayi = v => {
-  if (v === undefined || v === null || v === '') return null
-  const n = Number(String(v).replace(',', '.'))
-  return Number.isNaN(n) ? null : n
-}
 
 // ExcelJS tarihi UTC olarak yazar; Excel'de cihazın yerel saati görünsün diye kaydırılır.
 const excelTarih = d => (d ? new Date(d.getTime() - d.getTimezoneOffset() * 60000) : null)
@@ -827,54 +821,7 @@ export async function exportSayimLogu(logs, rows, session, firma = {}) {
   const { default: ExcelJS } = await import('exceljs')
   const rowMap = new Map(rows.map(r => [r.id, r]))
 
-  // Kullanıcı bazında, cihaz zamanına göre sıralı akış → önceki işlemden geçen süre
-  const sonZaman = new Map()
-  const detay = logs.map(l => {
-    const t = l.istemciZamani
-    const onceki = sonZaman.get(l.uid)
-    const araSn = t && onceki ? Math.round((t - onceki) / 1000) : null
-    if (t) sonZaman.set(l.uid, t)
-    const sistem = logSayi(l.sistemMiktar)
-    const yeni   = logSayi(l.yeniMiktar)
-    const hizli  = l.eylem === 'onayla' && araSn !== null && araSn < HIZLI_ONAY_SN
-    return { ...l, araSn, sistem, yeni, hizli, fark: sistem !== null && yeni !== null ? yeni - sistem : null }
-  })
-
-  // ── Özet ──
-  const ozet = new Map()
-  detay.forEach(l => {
-    if (!ozet.has(l.uid)) {
-      ozet.set(l.uid, {
-        ad: l.ad, rol: l.rol, toplam: 0, kalemler: new Set(), onayla: 0, elle: 0, farkli: 0,
-        geriAl: 0, sil: 0, toplu: 0, manuel: 0, hizli: 0, ilk: null, son: null, aktifSn: 0, araliklar: [],
-      })
-    }
-    const o = ozet.get(l.uid)
-    o.toplam++
-    if (l.istemciZamani) {
-      if (!o.ilk || l.istemciZamani < o.ilk) o.ilk = l.istemciZamani
-      if (!o.son || l.istemciZamani > o.son) o.son = l.istemciZamani
-    }
-    if (l.araSn !== null && l.araSn <= MOLA_SN) { o.aktifSn += l.araSn; o.araliklar.push(l.araSn) }
-    if (SAYIM_EYLEMLERI.has(l.eylem)) {
-      o.kalemler.add(l.rowId)
-      if (l.eylem === 'onayla') o.onayla++
-      else o.elle++
-      if (l.eylem !== 'onayla' && l.fark !== null && l.fark !== 0) o.farkli++
-    }
-    if (l.hizli) o.hizli++
-    if (l.eylem === 'geriAl') o.geriAl++
-    if (l.eylem === 'sil') o.sil++
-    if (l.eylem === 'sistemdenDoldur') o.toplu += l.adet || 0
-    if (l.eylem === 'manuelEkle') o.manuel++
-  })
-
-  const medyan = arr => {
-    if (arr.length === 0) return null
-    const s = [...arr].sort((a, b) => a - b)
-    const m = Math.floor(s.length / 2)
-    return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2)
-  }
+  const { detay, ozet } = logKisiOzeti(logs)
 
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'Sayım Planı'
@@ -907,13 +854,7 @@ export async function exportSayimLogu(logs, rows, session, firma = {}) {
   ;[...ozet.values()]
     .sort((a, b) => a.ad.localeCompare(b.ad, 'tr'))
     .forEach(o => {
-      const sayimIslem = o.onayla + o.elle
-      const onayPct  = sayimIslem > 0 ? Math.round(o.onayla / sayimIslem * 100) : null
-      const hizliPct = o.onayla > 0 ? Math.round(o.hizli / o.onayla * 100) : null
-      const uyarilar = []
-      if (hizliPct !== null && hizliPct >= 30 && o.hizli >= 5) uyarilar.push(`Hızlı onay oranı %${hizliPct} (${HIZLI_ONAY_SN} sn'den kısa aralık)`)
-      if (onayPct !== null && onayPct >= 98 && sayimIslem >= 20) uyarilar.push('Sistem miktarı neredeyse hep aynen onaylanmış')
-      if (o.toplu > 0) uyarilar.push(`${o.toplu} kalem "Sistemden Doldur" ile dolduruldu`)
+      const { onayPct, hizliPct, uyarilar } = kisiDegerlendirme(o)
 
       const wsRow = ws1.addRow({
         ad: o.ad, rol: LOG_ROL[o.rol] || o.rol, toplam: o.toplam, kalem: o.kalemler.size,
@@ -1003,8 +944,6 @@ export async function exportSayimLogu(logs, rows, session, firma = {}) {
 //    `onaylayan` alanı yoksa) kişi/zaman güvenilmez, kişi analizine girmez.
 //  - updatedAt sunucu zamanıdır; çevrimdışı girilip toplu senkronlanan satırlar
 //    aynı saniyelere yığılır ve "hızlı" görünebilir.
-const tsDate = v => (v?.toDate ? v.toDate() : v instanceof Date ? v : v?.seconds ? new Date(v.seconds * 1000) : null)
-
 export async function exportGeriyeDonukLog({ rows, results, gorevler = [], users = [], session = {}, firma = {} }) {
   const { default: ExcelJS } = await import('exceljs')
 
@@ -1013,7 +952,7 @@ export async function exportGeriyeDonukLog({ rows, results, gorevler = [], users
   gorevler.forEach(g => { if (g.sayimciUid && !adMap.has(g.sayimciUid)) adMap.set(g.sayimciUid, g.sayimciAd || g.sayimciEmail) })
   const kisi = uid => (uid ? adMap.get(uid) || `(${String(uid).slice(0, 6)}…)` : '—')
 
-  const sayildi = id => { const m = results[id]?.miktar; return m !== undefined && m !== '' }
+  const sayildi = id => sayildiMi(results, id)
   const ayni = r => {
     const s = logSayi(r.sayim), m = logSayi(results[r.id]?.miktar)
     return s !== null && m !== null && s === m
@@ -1028,7 +967,6 @@ export async function exportGeriyeDonukLog({ rows, results, gorevler = [], users
       atananKisi.set(id, l)
     })
   })
-  const izGuvenilir = res => res.status !== 'Onaylandı' || !!res.onaylayan
 
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'Sayım Planı'
@@ -1056,21 +994,13 @@ export async function exportGeriyeDonukLog({ rows, results, gorevler = [], users
   ;[...gorevler]
     .sort((a, b) => (tsDate(a.createdAt) || 0) - (tsDate(b.createdAt) || 0))
     .forEach(g => {
-      const ids = (g.atananRows || []).length > 0 ? g.atananRows : rows.map(r => r.id)
-      const gRows = rows.filter(r => ids.includes(r.id))
-      const sayilan = gRows.filter(r => sayildi(r.id))
-      const ayniSay = sayilan.filter(ayni).length
-      const ayniPct = sayilan.length > 0 ? Math.round(ayniSay / sayilan.length * 100) : null
-      const basla = tsDate(g.createdAt), bitis = tsDate(g.tamamlanmaZamani)
-      const sureSn = basla && bitis ? Math.max(0, (bitis - basla) / 1000) : null
-      const snKalem = sureSn !== null && sayilan.length > 0 ? Math.round(sureSn / sayilan.length) : null
-      const uyarilar = []
-      if (snKalem !== null && snKalem < 10 && sayilan.length >= 20) uyarilar.push(`Kalem başına ${snKalem} sn — fiziksel sayım için çok kısa`)
-      if (ayniPct !== null && ayniPct >= 98 && sayilan.length >= 20) uyarilar.push('Sayılan miktar neredeyse hep sistemle aynı')
+      const go = gorevOzeti(g, rows, results)
+      const { ayniSay, ayniPct, basla, bitis, sureSn, snKalem } = go
+      const uyarilar = [...go.uyarilar]
       if (!bitis) uyarilar.push('Bitiş zamanı yok (görev bitmemiş veya 01.09.2026 öncesi)')
       const wsRow = ws1.addRow({
         ad: g.sayimciAd || kisi(g.sayimciUid), tip: g.sayimTipi, filtre: g.filtreOzeti || (g.atananRows?.length ? '' : 'Tüm oturum'),
-        atanan: gRows.length, sayilan: sayilan.length, ayni: ayniSay, ayniPct, farkli: sayilan.length - ayniSay,
+        atanan: go.atanan, sayilan: go.sayilan, ayni: ayniSay, ayniPct, farkli: go.sayilan - ayniSay,
         durum: g.durum, basla: excelTarih(basla), bitis: excelTarih(bitis),
         sureDk: sureSn !== null ? Math.round(sureSn / 60) : null, snKalem, uyari: uyarilar.join(' · ') || '—',
       })
