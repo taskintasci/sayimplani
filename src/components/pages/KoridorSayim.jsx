@@ -27,6 +27,10 @@ export default function KoridorSayim({ onNavigate }) {
   // "Sistemi Göster" ile açılabilir.
   const [hideSistem, setHideSistem]   = useState(true)
   const [hideSayilan, setHideSayilan] = useState(false)
+  // Kör sayım formu varsayılan olarak BOŞ basılır (sayımcı sistemdeki miktarı
+  // görmesin diye). Sayım bitince dolu çıktı alabilmek için bu seçenek yazdırma
+  // modunu 'sayim'e çevirir — ekrandaki tabloyu etkilemez.
+  const [printSayilan, setPrintSayilan] = useState(false)
   const [filterSearch, setFilterSearch] = useState('')
   const [filterDurum, setFilterDurum] = useState([])
   const [filterBlok, setFilterBlok]     = useState([])
@@ -473,6 +477,13 @@ export default function KoridorSayim({ onNavigate }) {
             <button onClick={() => exportResults(koridorMatched, results, session, firmaProfile)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[12.5px] font-medium text-slate-700 hover:bg-slate-50">
               <span className="ms" style={{ fontSize: 15 }}>download</span> Excel'e Aktar
             </button>
+            <label
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] text-slate-600 hover:bg-slate-50 cursor-pointer select-none"
+              title="Kapalıyken form boş basılır (kör sayım); açıkken girilen sayım miktarları da yazdırılır"
+            >
+              <input type="checkbox" className="rounded" checked={printSayilan} onChange={e => setPrintSayilan(e.target.checked)} />
+              Sayılanla yazdır
+            </label>
             <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[12.5px] font-medium text-slate-700 hover:bg-slate-50">
               <span className="ms" style={{ fontSize: 15 }}>print</span> Yazdır
             </button>
@@ -481,7 +492,7 @@ export default function KoridorSayim({ onNavigate }) {
       )}
 
       <div className="hidden">
-        <PrintSheet ref={printRef} rows={filtered} results={results} session={session} mode="kor" hideSistem={hideSistem} hideSayilan={hideSayilan} sayimTuru="Kör Raf Sayım" firmaUnvani={firmaProfile?.unvan} />
+        <PrintSheet ref={printRef} rows={filtered} results={results} session={session} mode={printSayilan ? 'sayim' : 'kor'} hideSistem={hideSistem} hideSayilan={hideSayilan} sayimTuru="Kör Raf Sayım" firmaUnvani={firmaProfile?.unvan} />
       </div>
 
       {gorevModal && (

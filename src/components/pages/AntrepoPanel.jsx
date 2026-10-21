@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useReactToPrint } from 'react-to-print'
 import useStore from '../../store/useStore'
-import { exportAntrepoResults, exportAntrepoRaporFarklar } from '../../utils/excelExport'
+import { exportAntrepoResults, exportAntrepoRaporFarklar, exportSayimLogu, exportGeriyeDonukLog } from '../../utils/excelExport'
 import AntrepoPrintSheet from '../print/AntrepoPrintSheet'
 
 function formatTime(date) {
@@ -29,6 +29,29 @@ export default function AntrepoPanel({ onNavigate }) {
   )
   const [confirmClear, setConfirmClear] = useState(false)
   const [finishing, setFinishing] = useState(false)
+  const [logIndiriliyor, setLogIndiriliyor] = useState(false)
+
+  // Sayım işlem logu — sayımcının kalemleri gerçekten sayıp saymadığını
+  // denetlemek için (bkz. excelExport.exportSayimLogu).
+  async function handleSayimLogu() {
+    setLogIndiriliyor(true)
+    try {
+      const st = useStore.getState()
+      const logs = await st.loadSayimLog()
+      if (logs.length > 0) {
+        await exportSayimLogu(logs, rows, session, firmaProfile)
+        return
+      }
+      // Log öncesi (21.10.2026'dan eski) oturum: satırların son giriş izinden
+      // ve görev kayıtlarından geriye dönük denetim raporu.
+      const { gorevler, users } = await st.loadDenetimVerisi()
+      await exportGeriyeDonukLog({ rows, results, gorevler, users, session, firma: firmaProfile })
+    } catch {
+      window.alert('Sayım logu indirilemedi. Lütfen tekrar deneyin.')
+    } finally {
+      setLogIndiriliyor(false)
+    }
+  }
   const isYonetici = userRole === 'yonetici' || userRole === 'superadmin'
   const locked = session.durum === 'Tamamlandı'
 
@@ -97,6 +120,7 @@ export default function AntrepoPanel({ onNavigate }) {
         <div>
           <h1 className="text-xl font-bold text-slate-900">WMS Antrepo Sayım Paneli</h1>
           <p className="text-[13px] text-slate-500 mt-0.5">
+            {session.sayimNo && <span className="mono font-semibold text-blue-700 mr-1.5">{session.sayimNo}</span>}
             {session.type}{session.depoAdi ? ` · ${session.depoAdi}` : ''}{tarihStr ? ` · ${tarihStr}` : ''}
           </p>
         </div>
@@ -107,6 +131,14 @@ export default function AntrepoPanel({ onNavigate }) {
             className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[12.5px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <span className="ms" style={{ fontSize: 15 }}>download</span> Excel'e Aktar
+          </button>
+          <button
+            onClick={handleSayimLogu}
+            disabled={logIndiriliyor}
+            title="Kim, hangi kalemi, ne zaman, nasıl saydı (Onayla / elle miktar)"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[12.5px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <span className="ms" style={{ fontSize: 15 }}>{logIndiriliyor ? 'progress_activity' : 'manage_search'}</span> Sayım Logu
           </button>
           <button
             onClick={handlePrint}

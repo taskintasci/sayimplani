@@ -134,6 +134,20 @@ service cloud.firestore {
     }
 
     // ── sessions/{sessionId} ─────────────────────────────────────────────
+    // ── sayimNoSayac/{KOD} ── firma kodu bazında kesintisiz sayım no sayacı
+    // (bkz. utils/sayimNo.js, useStore.sayimNoAta). Yalnız +1 artabilir,
+    // silinemez — böylece bir numara iki kez üretilemez. Belge kimliği firma
+    // kodunu taşıdığı için firma alanı yok; oturum yazabilen roller erişir.
+    match /sayimNoSayac/{sayacId} {
+      allow read: if isSuperAdmin() || isYonetici();
+      allow create: if (isSuperAdmin() || isYonetici())
+        && sayacId.matches('^[A-Z0-9]{2,5}$')
+        && request.resource.data.son == 1;
+      allow update: if (isSuperAdmin() || isYonetici())
+        && request.resource.data.son == resource.data.son + 1;
+      allow delete: if false;
+    }
+
     match /sessions/{sessionId} {
       allow read: if isSuperAdmin() || sameFirma(resource.data.firma);
 
@@ -171,7 +185,14 @@ service cloud.firestore {
         )
       ) && (
         resource.data.durum != 'Tamamlandı'
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sayimNotu', 'updatedBy', 'updatedAt'])
+        // sayimNo: numara özelliğinden önce kapanmış oturumlara geriye dönük
+        // numara verilebilsin diye (aşağıdaki kural bir kez yazılmasını garanti eder).
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sayimNotu', 'sayimNo', 'updatedBy', 'updatedAt'])
+      ) && (
+        // Sayım numarası bir kez verilir, sonra kimse (süper yönetici dahil)
+        // değiştiremez/silemez — evraklardaki numara ile kayıt hep eşleşsin.
+        !('sayimNo' in resource.data)
+        || request.resource.data.get('sayimNo', null) == resource.data.sayimNo
       );
 
       allow delete: if isSuperAdmin() || (isYonetici() && sameFirma(resource.data.firma));
@@ -210,6 +231,32 @@ service cloud.firestore {
           );
       }
 
+      // ── sayimLog/{logId} ── sayım işlem logu (denetim izi). SALT-EKLEME:
+      // results'a yazabilen herkes kendi adına (uid == auth.uid) kayıt
+      // ekleyebilir; hiçbir rol (süper yönetici dahil) kaydı düzenleyemez veya
+      // silemez — sayımcının "sayıp saymadığını" gösteren iz değiştirilemesin.
+      // Okuma yalnız yönetici/kontrolcü/süper yönetici; sayımcı göremez.
+      match /sayimLog/{logId} {
+        allow read: if isSuperAdmin()
+          || (
+            isSignedIn()
+            && sameFirma(get(/databases/$(database)/documents/sessions/$(sessionId)).data.firma)
+            && userRole() in ['yonetici', 'kontrolcu']
+          );
+
+        allow create: if isSignedIn()
+          && request.resource.data.uid == request.auth.uid
+          && (
+            isSuperAdmin()
+            || (
+              sameFirma(get(/databases/$(database)/documents/sessions/$(sessionId)).data.firma)
+              && userRole() in ['yonetici', 'sayimci']
+            )
+          );
+
+        allow update, delete: if false;
+      }
+
       // ── rowChunks/{chunkId} ── sadece yönetici yazar, aynı get() stratejisi.
       match /rowChunks/{chunkId} {
         allow read: if isSuperAdmin()
@@ -243,10 +290,18 @@ service cloud.firestore {
             && request.resource.data.firma == resource.data.firma
           )
           || (
-            // sayımcı: sadece KENDİ görevinin 'durum' alanı
+            // sayımcı: sadece KENDİ görevinin 'durum' alanı + bitiş damgası
+            // ('tamamlanmaZamani', görevin son kalemi de sayıldığında
+            // updateGorevDurum tarafından bir kez yazılır). Damga yazılıyorsa
+            // serverTimestamp() olmak ZORUNDA — sayımcı geçmiş/gelecek bir
+            // bitiş saati uyduramasın diye request.time ile karşılaştırılıyor.
             isSignedIn()
             && request.auth.uid == resource.data.sayimciUid
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['durum'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['durum', 'tamamlanmaZamani'])
+            && (
+              !request.resource.data.diff(resource.data).affectedKeys().hasAny(['tamamlanmaZamani'])
+              || request.resource.data.tamamlanmaZamani == request.time
+            )
           );
 
         // Süper yönetici + yönetici (kendi firması) her görevi silebilir.

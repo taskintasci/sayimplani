@@ -42,6 +42,37 @@ function toNumClean(val) {
   return Number.isFinite(num) ? String(num) : str
 }
 
+function fmtDate(gun, ay, yil) {
+  return `${String(gun).padStart(2, '0')}.${String(ay).padStart(2, '0')}.${yil}`
+}
+
+// Redbull raporundaki "Best Before Date" (SKT) hücresi dosyadan dosyaya
+// değişiyor: bazen Excel'in tarih seri numarası (ör. 46023), bazen hücrenin
+// kendi biçimiyle metne dönmüş hâli (SheetJS `raw:false`). Seri numarası ve
+// ISO (yyyy-aa-gg) yazımı GG.AA.YYYY'ye çevriliyor; başka her yazım OLDUĞU
+// GİBİ bırakılıyor — "03/04/2026" gibi bir metinde gün/ay sırası tahmin
+// edilemez; yanlış çevirmektense dosyadaki görünümü korumak daha güvenli.
+function toDateStr(val) {
+  if (val === undefined || val === null || val === '') return ''
+  const str = String(val).trim()
+  if (str === '' || str === '-') return ''
+
+  // Excel tarih seri numarası (1899-12-30 başlangıçlı)
+  if (/^\d+(\.\d+)?$/.test(str)) {
+    const serial = Number(str)
+    if (serial > 0 && serial < 100000) {
+      const d = new Date(Math.round((serial - 25569) * 86400000))
+      if (!Number.isNaN(d.getTime())) return fmtDate(d.getUTCDate(), d.getUTCMonth() + 1, d.getUTCFullYear())
+    }
+  }
+
+  // ISO: 2026-12-31 / 2026-12-31T00:00:00
+  const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (iso) return fmtDate(Number(iso[3]), Number(iso[2]), Number(iso[1]))
+
+  return str
+}
+
 // ─── SKU_Sayım_Listesi sütun haritası ───────────────────────────────────────
 const SKU_MAP = {
   'sira no.'  : 'siraNo',
@@ -108,10 +139,16 @@ function isRapor5(headers) {
   return RAPOR5_SIGNATURES.some(sig => norms.some(h => h.includes(sig)))
 }
 
-// ─── WMS_Rapor_31 sütun haritası ──────────────────────────────────────────────
+// ─── WMS Antrepo (WMS_Rapor_31 / Kalan Stok Raporu) sütun haritası ───────────
 // WMS Antrepo Sayım için kullanılan WMS raporu. Parti yerine Beyanname; Ambalaj yok;
 // Palet Barkodu/Palet Adeti/Toplam Stok/Rezerve Adet gibi WMS'e özgü alanlar var.
+//
+// 2026-09-01: Rapor "Kalan Stok Raporu (Adresli)" adıyla ve İNGİLİZCE başlıklarla
+// gelmeye başladı. İki başlık ailesi de burada map'li — eski Türkçe başlıklı
+// dosyalar yüklenmeye devam edebilsin diye ikisi de korunuyor.
+// Yeni dosyada "Depo Kalan Stok" sütunu YOK; hesaplaDepoKalanStok() üretiyor.
 const WMS31_MAP = {
+  // ── Türkçe başlıklar (eski WMS_Rapor_31) ──
   'adres'            : 'adres',
   'beyanname'        : 'parti',
   'stok kodu'        : 'kod',
@@ -127,10 +164,44 @@ const WMS31_MAP = {
   'depo kalan stok'  : 'sayim',
   'birim adı'        : 'birim',
   'birim adi'        : 'birim',
+
+  // ── İngilizce başlıklar (Kalan Stok Raporu (Adresli), 2026-09-01→) ──
+  // Map edilmeyen sütunlar (Customer, Warehouse, ASN Number, Supplier Name,
+  // Batch No/Ex, tarihler, COO, SAP Location Code, CBM'ler, Ready to Sell)
+  // sayımda kullanılmıyor — bilinçli olarak dışarıda bırakıldı.
+  'wh location'              : 'adres',
+  'customs document number'  : 'parti',
+  'material code'            : 'kod',
+  'material description'     : 'ad',
+  'category'                 : 'kategori',
+  'pallet barcode'           : 'paletBarkodu',
+  'pallet quantity'          : 'paletAdeti',
+  'quantity 1'               : 'adet1',
+  'reserved quantity'        : 'rezerveAdet',
+  'durum no'                 : 'durum',
+  // Başlık kaynakta "UOM 1 ( Unit of Measure)" — parantez içi baştaki boşluk
+  // dosyadan dosyaya değişebiliyor, iki yazım da map'li.
+  'uom 1 ( unit of measure)' : 'birim',
+  'uom 1 (unit of measure)'  : 'birim',
+  'uom 1'                    : 'birim',
 }
 
-// WMS_Rapor_31 ayırt edici başlıkları
-const WMS31_SIGNATURES = ['beyanname', 'rezerve adet', 'depo kalan stok', 'palet barkodu', 'palet adeti']
+// İngilizce raporda "Durum Adı" (Normal/Özel/Bloke/Kalite) sütunu YOK, sadece
+// "Durum No" kodu var. Eşleşme, eski Türkçe raporun iki sütunu karşılaştırılarak
+// doğrulandı (2026-09-01, 8804 satır, birebir). Kod→ad çevrilmezse sayım
+// ekranındaki durum rozetleri ve durum filtresi eski dosyalarla uyumsuz kalır.
+const WMS31_DURUM_KODLARI = {
+  'ok': 'Normal',
+  'cu': 'Özel',
+  'bl': 'Bloke',
+  'qa': 'Kalite',
+}
+
+// WMS Antrepo ayırt edici başlıkları (hem Türkçe hem İngilizce rapor)
+const WMS31_SIGNATURES = [
+  'beyanname', 'rezerve adet', 'depo kalan stok', 'palet barkodu', 'palet adeti',
+  'wh location', 'customs document number', 'reserved quantity', 'pallet barcode', 'pallet quantity',
+]
 
 function isWms31(headers) {
   const norms = headers.map(norm)
@@ -139,22 +210,26 @@ function isWms31(headers) {
 
 // ─── WMS Depo Redbull sütun haritası ──────────────────────────────────────
 // Red Bull Gıda'nın kendi WMS'inden alınan "Sayıma gelecek Rapor" formatı.
-// Best Before Date / adres alt-parça sütunları BİLİNÇLİ olarak map EDİLMEZ —
-// konum verisi zaten tek parça 'Address' sütununda (Bina-Blok-Koridor-Sütun-Kat,
-// tire ile ayrık, bkz. adresUtils.js parseAdresRedbull), SKT'ye ihtiyaç yok
-// (kullanıcı kararı).
+// Adres alt-parça sütunları (ayrı Bina/Koridor/Sutun/Sıra/Kat) BİLİNÇLİ olarak
+// map EDİLMEZ — konum verisi zaten tek parça 'Address' sütununda
+// (Bina-Blok-Koridor-Sütun-Kat, tire ile ayrık, bkz. adresUtils.js
+// parseAdresRedbull).
+// Best Before Date (SKT) 2026-09-01'de eklendi: sayım sırasında SKT kontrolü
+// de yapıldığı için kullanıcı isteğiyle artık map ediliyor (önceki karar
+// "gerek yok" yönündeydi).
 const REDBULL_MAP = {
-  'address'        : 'adres',
-  'material'       : 'kod',
-  'material name'  : 'ad',
-  'sscc'           : 'sscc',
-  'lot'            : 'parti',
-  'palet'          : 'paletAdeti',
-  'alisan statu'   : 'durum',
-  'adet'           : 'sayim',
-  'birim'          : 'birim',
-  'açıklama'       : 'aciklama',
-  'aciklama'       : 'aciklama',
+  'address'            : 'adres',
+  'material'           : 'kod',
+  'material name'      : 'ad',
+  'sscc'               : 'sscc',
+  'lot'                : 'parti',
+  'best before date'   : 'skt',
+  'palet'              : 'paletAdeti',
+  'alisan statu'       : 'durum',
+  'adet'               : 'sayim',
+  'birim'              : 'birim',
+  'açıklama'           : 'aciklama',
+  'aciklama'           : 'aciklama',
 }
 
 // WMS Depo Redbull ayırt edici başlıkları — RAPOR5_SIGNATURES/WMS31_SIGNATURES
@@ -176,6 +251,20 @@ function buildColMap(headers, fieldMap) {
   return colMap
 }
 
+// "Depo Kalan Stok" (sayım listesinin sistem miktarı) = Toplam Stok − Rezerve Adet.
+// İngilizce başlıklı yeni WMS Antrepo raporunda bu sütun hiç yok; Quantity 1 ile
+// Reserved Quantity'den burada hesaplanıyor. Türkçe başlıklı eski dosyalarda
+// sütun hazır geldiği için oradaki değere DOKUNULMAZ (dosya her zaman kazanır).
+function hesaplaDepoKalanStok(mapped) {
+  if (mapped.sayim !== undefined && mapped.sayim !== '') return
+  const toplam = Number(mapped.adet1)
+  if (mapped.adet1 === undefined || mapped.adet1 === '' || !Number.isFinite(toplam)) return
+  const rezerve = Number(mapped.rezerveAdet)
+  const kalan = toplam - (Number.isFinite(rezerve) ? rezerve : 0)
+  // Ondalıklı stokta kayan nokta artığını temizle (ör. 1.2000000000000002 → 1.2)
+  mapped.sayim = String(Math.round(kalan * 1e6) / 1e6)
+}
+
 function mapDataRow(rowArr, colMap, siraNo, format) {
   const mapped = { id: makeId(), siraNo }
   const isW31 = format === 'wms31'
@@ -191,12 +280,19 @@ function mapDataRow(rowArr, colMap, siraNo, format) {
       mapped[field] = isW31 ? toNumWms31(val) : toNumClean(val)
     } else if (field === 'sayim' || field === 'adet1') {
       mapped[field] = isW31 ? toNumWms31(val) : toNum(val)
+    } else if (field === 'durum') {
+      const raw = String(val).trim()
+      mapped.durum = isW31 ? (WMS31_DURUM_KODLARI[raw.toLowerCase()] || raw) : raw
+    } else if (field === 'skt') {
+      mapped.skt = toDateStr(val)
     } else if (field === 'siraNo') {
       mapped.siraNo = val ? Number(val) || siraNo : siraNo
     } else {
       mapped[field] = String(val)
     }
   })
+
+  if (isW31) hesaplaDepoKalanStok(mapped)
 
   return mapped
 }
@@ -283,7 +379,7 @@ export function parseExcelFile(file) {
 
         if (bestScore === 0) {
           reject(new Error(
-            'Tanınan sütun bulunamadı. Lütfen RAPOR5.xls, Sku_Sayım_Listesi.xlsx, WMS_Rapor_31.xlsx veya WMS Depo Redbull raporu yükleyin.'
+            'Tanınan sütun bulunamadı. Lütfen RAPOR5.xls, Sku_Sayım_Listesi.xlsx, WMS Antrepo raporu (Kalan Stok Raporu / WMS_Rapor_31) veya WMS Depo Redbull raporu yükleyin.'
           ))
           return
         }

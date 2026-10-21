@@ -221,10 +221,10 @@ export default function RedbullSayim({ onNavigate }) {
       {/* ── Tablo ── */}
       {rowsLoading ? (
         <div className="flex-1 overflow-auto">
-          <table className="w-full text-left border-collapse" style={{ minWidth: 1200 }}>
+          <table className="w-full text-left border-collapse" style={{ minWidth: 1300 }}>
             <thead className="sticky top-0 z-10">
               <tr className="bg-slate-800">
-                {[8, 96, 112, 200, 140, 80, 90, 60, 80, 90, 60, 120].map((w, i) => (
+                {[8, 96, 112, 200, 140, 80, 80, 90, 60, 80, 90, 60, 120].map((w, i) => (
                   <th key={i} className="px-3 py-2.5">
                     <span className="skeleton h-3 inline-block" style={{ width: w * 0.5 + 'px', opacity: 0.3 }} />
                   </th>
@@ -234,7 +234,7 @@ export default function RedbullSayim({ onNavigate }) {
             <tbody>
               {Array.from({ length: 18 }).map((_, i) => (
                 <tr key={i} className="border-b border-slate-100" style={i % 2 === 1 ? { background: '#f8fafc' } : {}}>
-                  {[8, 96, 112, 200, 140, 80, 90, 60, 80, 90, 60, 120].map((w, j) => (
+                  {[8, 96, 112, 200, 140, 80, 80, 90, 60, 80, 90, 60, 120].map((w, j) => (
                     <td key={j} className="px-3 py-2.5">
                       <span className="skeleton h-3 inline-block" style={{ width: (w * (0.4 + Math.random() * 0.4)) + 'px' }} />
                     </td>
@@ -257,7 +257,7 @@ export default function RedbullSayim({ onNavigate }) {
         </div>
       ) : (
         <div className="flex-1 overflow-auto">
-          <table className="w-full text-left border-collapse" style={{ minWidth: 1200 }}>
+          <table className="w-full text-left border-collapse" style={{ minWidth: 1300 }}>
             <thead className="sticky top-0 z-10">
               <tr className="bg-slate-800 text-white text-[11px] mono uppercase tracking-wider">
                 <th className="px-3 py-2.5 text-center w-8">#</th>
@@ -266,6 +266,7 @@ export default function RedbullSayim({ onNavigate }) {
                 <th className="px-3 py-2.5">Stok Adı</th>
                 <th className="px-3 py-2.5 w-40">SSCC</th>
                 <th className="px-3 py-2.5 w-24">Lot</th>
+                <th className="px-3 py-2.5 w-24">SKT</th>
                 <th className="px-3 py-2.5 w-28 text-center">Statu</th>
                 <th className="px-3 py-2.5 w-16 text-right">Palet Adeti</th>
                 <th className="px-3 py-2.5 w-20 text-right sistem-col">Sistem</th>
@@ -292,6 +293,7 @@ export default function RedbullSayim({ onNavigate }) {
                     <td className="px-3 py-2 font-medium text-slate-800">{row.ad}</td>
                     <td className="px-3 py-2 mono text-slate-400 text-[10.5px]">{row.sscc}</td>
                     <td className="px-3 py-2 mono text-slate-500 text-[11px]">{row.parti}</td>
+                    <td className="px-3 py-2 mono text-slate-500 text-[11px]">{row.skt}</td>
                     <td className="px-3 py-2 text-center"><RedbullDurumBadge durum={row.durum} /></td>
                     <td className="px-3 py-2 text-right mono text-slate-500">{row.paletAdeti}</td>
                     <td className="px-3 py-2 text-right mono text-slate-500 sistem-col">{row.sayim}</td>

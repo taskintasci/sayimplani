@@ -56,6 +56,7 @@ function SessionCard({ s, selectedId, setSelectedId, deletingId, setDeletingId, 
       <div className="flex items-start justify-between mb-1">
         <button className="flex-1 text-left" onClick={() => { setSelectedId(s.id); setDeletingId(null) }}>
           <div className="text-slate-800 font-semibold text-sm">{s.type}</div>
+          {s.sayimNo && <div className="mono text-[11px] font-semibold text-blue-700 mt-0.5">{s.sayimNo}</div>}
         </button>
         <div className="flex items-center gap-2 ml-2 shrink-0">
           <StatusBadge durum={s.durum} />

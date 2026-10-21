@@ -1,5 +1,6 @@
 import useStore from '../../store/useStore'
 import { exportAnalizi } from '../../utils/excelExport'
+import { skuDogrulukSayilari } from '../../utils/analizUtils'
 import { SABLON } from '../../constants'
 
 function AccBar({ pct }) {
@@ -47,16 +48,11 @@ export default function KorSayimAnalizi({ onNavigate }) {
   const stokMuafiyet = sistemToplam * 0.001
   const stokPct      = sistemToplam > 0 ? +(fizikiToplam / sistemToplam * 100).toFixed(2) : 0
 
-  const uniqueSkuSistem  = [...new Set(rows.map(r => r.kod))].length
-  const uniqueSkuHatasiz = [...new Set(
-    rows.filter(r => {
-      const m = results[r.id]?.miktar
-      return m !== undefined && m !== '' && String(m) === String(r.sayim)
-    }).map(r => r.kod)
-  )].length
-  const uniqueSkuToplam = uniqueSkuSistem + manuelUniqueSku
-  const hataliSku       = (uniqueSkuSistem - uniqueSkuHatasiz) + manuelUniqueSku
-  const skuPct          = uniqueSkuToplam > 0 ? +(uniqueSkuHatasiz / uniqueSkuToplam * 100).toFixed(2) : 0
+  const { tamamlananSku, hatasizSku } = skuDogrulukSayilari(rows, results)
+  const uniqueSkuHatasiz = hatasizSku
+  const uniqueSkuToplam  = tamamlananSku + manuelUniqueSku
+  const hataliSku        = (tamamlananSku - hatasizSku) + manuelUniqueSku
+  const skuPct           = uniqueSkuToplam > 0 ? +(uniqueSkuHatasiz / uniqueSkuToplam * 100).toFixed(2) : 0
 
   const genelPct = +((adresPct + stokPct + skuPct) / 3).toFixed(2)
 
@@ -92,6 +88,7 @@ export default function KorSayimAnalizi({ onNavigate }) {
         <div>
           <h1 className="text-xl font-bold text-slate-900">Kör Stok Sayım Analizi</h1>
           <p className="text-[13px] text-slate-500 mt-0.5">
+            {session.sayimNo && <span className="mono font-semibold text-blue-700 mr-1.5">{session.sayimNo}</span>}
             {session.type || 'Sayım'}{session.depoAdi ? ` · ${session.depoAdi}` : ''}{tarihStr ? ` · ${tarihStr}` : ''}
           </p>
         </div>

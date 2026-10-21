@@ -19,6 +19,10 @@ export default function RedbullKorSayim({ onNavigate }) {
   // amacıyla "Sistemi Göster" ile isteğe bağlı açabiliyor.
   const [hideSistem, setHideSistem]   = useState(true)
   const [hideSayilan, setHideSayilan] = useState(false)
+  // Kör sayım formu varsayılan olarak BOŞ basılır (sayımcı sistemdeki miktarı
+  // görmesin diye). Sayım bitince dolu çıktı alabilmek için bu seçenek yazdırma
+  // modunu 'sayim'e çevirir — ekrandaki tabloyu etkilemez.
+  const [printSayilan, setPrintSayilan] = useState(false)
   const [filterSearch, setFilterSearch] = useState('')
   const [filterDurum, setFilterDurum] = useState([])
   const [filterBina, setFilterBina]       = useState([])
@@ -301,7 +305,7 @@ export default function RedbullKorSayim({ onNavigate }) {
         </div>
       ) : (
         <div className="flex-1 overflow-auto">
-          <table className="w-full text-left border-collapse" style={{ minWidth: 1200 }}>
+          <table className="w-full text-left border-collapse" style={{ minWidth: 1300 }}>
             <thead className="sticky top-0 z-10">
               <tr className="bg-slate-800 text-white text-[11px] mono uppercase tracking-wider">
                 <th className="px-3 py-2.5 text-center w-8">#</th>
@@ -310,6 +314,7 @@ export default function RedbullKorSayim({ onNavigate }) {
                 <th className="px-3 py-2.5">Stok Adı</th>
                 <th className="px-3 py-2.5 w-40">SSCC</th>
                 <th className="px-3 py-2.5 w-24">Lot</th>
+                <th className="px-3 py-2.5 w-24">SKT</th>
                 <th className="px-3 py-2.5 w-28 text-center">Statu</th>
                 <th className="px-3 py-2.5 w-16 text-right">Palet Adeti</th>
                 <th className="px-3 py-2.5 w-20 text-right sistem-col">Sistem</th>
@@ -336,6 +341,7 @@ export default function RedbullKorSayim({ onNavigate }) {
                     <td className="px-3 py-2 font-medium text-slate-800">{row.ad}</td>
                     <td className="px-3 py-2 mono text-slate-400 text-[10.5px]">{row.sscc}</td>
                     <td className="px-3 py-2 mono text-slate-500 text-[11px]">{row.parti}</td>
+                    <td className="px-3 py-2 mono text-slate-500 text-[11px]">{row.skt}</td>
                     <td className="px-3 py-2 text-center"><RedbullDurumBadge durum={row.durum} /></td>
                     <td className="px-3 py-2 text-right mono text-slate-500">{row.paletAdeti}</td>
                     <td className="px-3 py-2 text-right mono text-slate-500 sistem-col">{row.sayim}</td>
@@ -438,6 +444,13 @@ export default function RedbullKorSayim({ onNavigate }) {
             <button onClick={() => exportRedbullResults(korMatched, results, session, firmaProfile)} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[12.5px] font-medium text-slate-700 hover:bg-slate-50">
               <span className="ms" style={{ fontSize: 15 }}>download</span> Excel'e Aktar
             </button>
+            <label
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12.5px] text-slate-600 hover:bg-slate-50 cursor-pointer select-none"
+              title="Kapalıyken form boş basılır (kör sayım); açıkken girilen sayım miktarları da yazdırılır"
+            >
+              <input type="checkbox" className="rounded" checked={printSayilan} onChange={e => setPrintSayilan(e.target.checked)} />
+              Sayılanla yazdır
+            </label>
             <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-[12.5px] font-medium text-slate-700 hover:bg-slate-50">
               <span className="ms" style={{ fontSize: 15 }}>print</span> Yazdır
             </button>
@@ -446,7 +459,7 @@ export default function RedbullKorSayim({ onNavigate }) {
       )}
 
       <div className="hidden">
-        <RedbullPrintSheet ref={printRef} rows={filtered} results={results} session={session} mode="kor" hideSistem={hideSistem} hideSayilan={hideSayilan} sayimTuru="Kör Sayım" firmaUnvani={firmaProfile?.unvan} />
+        <RedbullPrintSheet ref={printRef} rows={filtered} results={results} session={session} mode={printSayilan ? 'sayim' : 'kor'} hideSistem={hideSistem} hideSayilan={hideSayilan} sayimTuru="Kör Sayım" firmaUnvani={firmaProfile?.unvan} />
       </div>
 
       {gorevModal && (

@@ -119,6 +119,7 @@ function SwipeCard({ row, sayilanMiktar, onConfirm, onEdit, isMembran, isAntrepo
         <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mb-3 shrink-0">
           <span className="text-slate-500 mono" style={{ fontSize: 15 }}>{row.kod}</span>
           {row.parti && <span className="text-slate-400 mono text-xs">{isAntrepo ? 'Beyanname' : isRedbull ? 'Lot' : 'Parti'}: {row.parti}</span>}
+          {isRedbull && row.skt && <span className="text-slate-400 mono text-xs">SKT: {row.skt}</span>}
           {isAntrepo && row.paletBarkodu && <span className="text-slate-400 mono text-xs">Palet: {row.paletBarkodu}</span>}
           {isRedbull && row.sscc && <span className="text-slate-400 mono text-xs">SSCC: {row.sscc}</span>}
           {isRedbull && row.paletAdeti && <span className="text-slate-400 mono text-xs">Palet Adeti: {row.paletAdeti}</span>}
@@ -223,6 +224,15 @@ export default function SayimciEkran({ mode = 'self' }) {
     [atanan, results]
   )
 
+  // Özet ("Tebrikler!") ekranındaki bitiş damgası. Damgayı updateGorevDurum
+  // store'daki `gorevler` listesine yazdığı için yerel `gorev` state'i değil
+  // listedeki güncel kayıt okunuyor — böylece görevi bitiren her iki yolda da
+  // (kart modu / tablo) aynı değer görünüyor.
+  const gorevBitis = useMemo(
+    () => gorevler.find(g => g.id === gorev?.id)?.tamamlanmaZamani || null,
+    [gorevler, gorev]
+  )
+
   // Görev, tablodan (kart modu dışında) doldurulduğunda da "tamamlandı" olarak işaretlensin
   useEffect(() => {
     if (mode !== 'self' || !gorev || gorev.durum === 'tamamlandi') return
@@ -305,7 +315,7 @@ export default function SayimciEkran({ mode = 'self' }) {
       miktar: prevResult?.miktar ?? '',
       status: prevResult?.status ?? '',
       notlar: prevResult?.notlar ?? '',
-    })
+    }, { eylem: 'geriAl', ekran: 'kart', gorevId: gorev?.id })
     setEditing(false)
     setIdx(confirmedIdx)
     setView('sayim')
@@ -329,7 +339,7 @@ export default function SayimciEkran({ mode = 'self' }) {
       miktar: current.sayim,
       status: 'Sayıldı',
       notlar: results[current.id]?.notlar || '',
-    })
+    }, { eylem: 'onayla', ekran: 'kart', gorevId: gorev?.id })
     armUndo({ id: current.id, idx: idxRef.current, prevResult, kod: current.kod })
     ilerle()
   }
@@ -349,7 +359,7 @@ export default function SayimciEkran({ mode = 'self' }) {
       miktar: editVal === '' ? '' : Number(editVal),
       status: 'Sayıldı',
       notlar: editNote,
-    })
+    }, { eylem: 'duzenle', ekran: 'kart', gorevId: gorev?.id })
     armUndo({ id: current.id, idx: idxRef.current, prevResult, kod: current.kod })
     ilerle()
   }
@@ -372,7 +382,10 @@ export default function SayimciEkran({ mode = 'self' }) {
     const grupMap = new Map()
     gorevListesi.forEach(g => {
       if (!grupMap.has(g.sessionId)) {
-        const grup = { sessionId: g.sessionId, sessionType: g.sessionType, sessionTarih: g.sessionTarih, items: [] }
+        // Önizlemede görevler loadSessionGorevler'dan gelir (sessionNo yok) →
+        // aktif oturumun numarası kullanılır.
+        const sessionNo = g.sessionNo || (g.sessionId === activeSessionId ? session?.sayimNo : '') || ''
+        const grup = { sessionId: g.sessionId, sessionType: g.sessionType, sessionTarih: g.sessionTarih, sessionNo, items: [] }
         grupMap.set(g.sessionId, grup)
         gruplar.push(grup)
       }
@@ -401,6 +414,7 @@ export default function SayimciEkran({ mode = 'self' }) {
                     {grup.sessionType || 'Sayım'}
                     {grup.sessionTarih && ' — ' + new Date(grup.sessionTarih).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
+                  {grup.sessionNo && <span className="mono text-[11px] font-semibold text-blue-700 ml-auto">{grup.sessionNo}</span>}
                 </div>
                 {grup.items.map(g => {
                   const ids = g.atananRows || []
@@ -450,7 +464,7 @@ export default function SayimciEkran({ mode = 'self' }) {
                           </div>
                           <button className="w-full text-left" onClick={() => openGorev(g)}>
                             <p className="text-slate-500 text-sm mb-1">{g.sessionType}</p>
-                            {(mode === 'preview' || g.createdAt) && (
+                            {(mode === 'preview' || g.createdAt || g.tamamlanmaZamani) && (
                               <p className="text-slate-400 text-xs mb-2 flex items-center gap-1 flex-wrap">
                                 {mode === 'preview' && (
                                   <span className="flex items-center gap-1">
@@ -462,6 +476,17 @@ export default function SayimciEkran({ mode = 'self' }) {
                                   <span className="flex items-center gap-1">
                                     <span className="ms" style={{ fontSize: 13 }}>schedule</span> Gönderildi: {formatGorevZamani(g.createdAt)}
                                   </span>
+                                )}
+                                {/* Bitiş damgası: sayımcı görevin son kalemini de sayıp durum
+                                    'tamamlandi'ya geçtiği an yazılıyor (store: updateGorevDurum).
+                                    Eski görevlerde alan yok — o zaman satır hiç görünmez. */}
+                                {g.tamamlanmaZamani && (
+                                  <>
+                                    {g.createdAt && <span className="text-slate-300">·</span>}
+                                    <span className="flex items-center gap-1 text-emerald-600">
+                                      <span className="ms" style={{ fontSize: 13 }}>task_alt</span> Bitirildi: {formatGorevZamani(g.tamamlanmaZamani)}
+                                    </span>
+                                  </>
                                 )}
                               </p>
                             )}
@@ -625,6 +650,7 @@ export default function SayimciEkran({ mode = 'self' }) {
                     <th className="px-3 py-2.5">Ad</th>
                     {isRedbull && <th className="px-3 py-2.5 w-36">SSCC</th>}
                     <th className="px-3 py-2.5 w-32">{isAntrepo ? 'Beyanname Numarası' : isRedbull ? 'Lot' : 'Parti'}</th>
+                    {isRedbull && <th className="px-3 py-2.5 w-24">SKT</th>}
                     {isAntrepo && <th className="px-3 py-2.5 w-28">Palet Barkodu</th>}
                     {isRedbull && <th className="px-3 py-2.5 w-24 text-center">Statu</th>}
                     {isRedbull && <th className="px-3 py-2.5 w-20 text-right">Palet Adeti</th>}
@@ -684,7 +710,7 @@ export default function SayimciEkran({ mode = 'self' }) {
                             <td className="px-3 py-2 text-right mono text-slate-500 sistem-col">{row.sayim}</td>
                             <td className="px-3 py-2 text-right sayilan-col">
                               <div className="flex items-center justify-end gap-1">
-                                <input type="number" value={res.miktar ?? ''} onChange={e => updateResult(row.id, { miktar: e.target.value })} placeholder="—" disabled={locked} className={'input-count ' + (isDiff ? 'input-diff' : hasValue ? 'input-ok' : '')} />
+                                <input type="number" value={res.miktar ?? ''} onChange={e => updateResult(row.id, { miktar: e.target.value }, { ekran: 'liste', gorevId: gorev?.id })} placeholder="—" disabled={locked} className={'input-count ' + (isDiff ? 'input-diff' : hasValue ? 'input-ok' : '')} />
                                 {isDiff && <span className="ms text-red-400" style={{ fontSize: 14 }}>warning</span>}
                               </div>
                             </td>
@@ -709,13 +735,14 @@ export default function SayimciEkran({ mode = 'self' }) {
                         <td className="px-3 py-2 font-medium text-slate-800">{row.ad}</td>
                         {isRedbull && <td className="px-3 py-2 mono text-slate-400 text-[10.5px]">{row.sscc}</td>}
                         <td className="px-3 py-2 mono text-slate-500 text-[11.5px]">{row.parti}</td>
+                        {isRedbull && <td className="px-3 py-2 mono text-slate-500 text-[11.5px]">{row.skt}</td>}
                         {isAntrepo && <td className="px-3 py-2 mono text-slate-500 text-[11.5px]">{row.paletBarkodu}</td>}
                         {isRedbull && <td className="px-3 py-2 text-center text-slate-500 text-[11.5px]">{row.durum}</td>}
                         {isRedbull && <td className="px-3 py-2 text-right mono text-slate-500 text-[11.5px]">{row.paletAdeti}</td>}
                         <td className="px-3 py-2 text-right mono text-slate-500 sistem-col">{row.sayim}</td>
                         <td className="px-3 py-2 text-right sayilan-col">
                           <div className="flex items-center justify-end gap-1">
-                            <input type="number" value={res.miktar ?? ''} onChange={e => updateResult(row.id, { miktar: e.target.value })} placeholder="—" disabled={locked} className={'input-count ' + (isDiff ? 'input-diff' : hasValue ? 'input-ok' : '')} />
+                            <input type="number" value={res.miktar ?? ''} onChange={e => updateResult(row.id, { miktar: e.target.value }, { ekran: 'liste', gorevId: gorev?.id })} placeholder="—" disabled={locked} className={'input-count ' + (isDiff ? 'input-diff' : hasValue ? 'input-ok' : '')} />
                             {isDiff && <span className="ms text-red-400" style={{ fontSize: 14 }}>warning</span>}
                           </div>
                         </td>
@@ -874,6 +901,12 @@ export default function SayimciEkran({ mode = 'self' }) {
         {manuelRows.length > 0 && (
           <p className="text-amber-700 text-sm mb-6">+ {manuelRows.length} manuel fazla stok girişi</p>
         )}
+        {gorevBitis && (
+          <p className="text-slate-500 text-sm mt-1 flex items-center gap-1.5">
+            <span className="ms text-emerald-500" style={{ fontSize: 16 }}>task_alt</span>
+            Bitiş: {formatGorevZamani(gorevBitis)}
+          </p>
+        )}
         <button
           onClick={() => { setView('gorevler'); setGorev(null) }}
           className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg mt-4"
@@ -994,7 +1027,7 @@ function DurumRozet({ durum }) {
   return <span className={'px-2 py-0.5 rounded-full text-xs font-medium ' + d.cls}>{d.label}</span>
 }
 
-const MANUEL_BOS = { kod: '', ad: '', adres: '', parti: '', sscc: '', durum: '', miktar: '', birim: '', not: '' }
+const MANUEL_BOS = { kod: '', ad: '', adres: '', parti: '', skt: '', sscc: '', durum: '', miktar: '', birim: '', not: '' }
 
 function ManuelModal({ onClose, addManualRow, manualRows, isKor, isKoridor, isRedbull, skuMasterdata, lokasyonlar, rows }) {
   const [form, setForm] = useState(MANUEL_BOS)
@@ -1041,7 +1074,7 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isKoridor, isRe
   // olasılığına karşı onay iste — yazım sırasında yanlışlıkla dokunma kayıp
   // vermesin diye.
   const isDirty = form.kod.trim() !== '' || form.adres.trim() !== '' || form.miktar !== '' ||
-    form.parti.trim() !== '' || form.sscc.trim() !== '' || form.durum.trim() !== '' || form.not.trim() !== ''
+    form.parti.trim() !== '' || form.skt.trim() !== '' || form.sscc.trim() !== '' || form.durum.trim() !== '' || form.not.trim() !== ''
   function handleClose() {
     if (isDirty && !window.confirm('Girdiğiniz bilgiler kaybolacak. Kapatmak istediğinize emin misiniz?')) return
     onClose()
@@ -1060,6 +1093,7 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isKoridor, isRe
       ad:     matchedSku.ad,
       adres:  form.adres.trim(),
       parti:  form.parti.trim(),
+      skt:    form.skt.trim(),
       sscc:   form.sscc.trim(),
       durum:  form.durum.trim(),
       miktar: Number(form.miktar),
@@ -1146,6 +1180,13 @@ function ManuelModal({ onClose, addManualRow, manualRows, isKor, isKoridor, isRe
                 type="text" placeholder={isRedbull ? 'Normal / İade...' : 'Serbest / KK...'} className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400" />
             </div>
           </div>
+          {isRedbull && (
+            <div>
+              <label className="block text-xs font-medium text-slate-500 mb-1">SKT</label>
+              <input value={form.skt} onChange={e => setForm(f => ({ ...f, skt: e.target.value }))}
+                type="text" placeholder="31.12.2026" className="w-full border border-slate-300 rounded-xl px-4 py-3 mono text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-400" />
+            </div>
+          )}
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="block text-xs font-medium text-slate-500 mb-1">Sayılan Miktar *</label>

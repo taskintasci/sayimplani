@@ -63,6 +63,11 @@ export default function TopBar({ activePage, onMenu }) {
         <span className="ms" style={{ fontSize: 20 }}>menu</span>
       </button>
       <span className="text-slate-800 font-semibold whitespace-nowrap">{pageName}</span>
+      {aktifSayim.sayimNo && (
+        <span className="mono text-[11.5px] font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-md px-1.5 py-0.5 whitespace-nowrap" title="Sayım No">
+          {aktifSayim.sayimNo}
+        </span>
+      )}
       {aktifSayim.type && (
         <>
           <span className="text-slate-300">·</span>

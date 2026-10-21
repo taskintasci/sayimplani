@@ -113,9 +113,9 @@ export default function ExcelYukle({ onNavigate }) {
         </div>
         <div className="grid grid-cols-2 gap-1">
           {(isWms31
-            ? ['Adres', 'Stok Kodu', 'Stok Adı', 'Beyanname', 'Durum Adı', 'Kategori', 'Palet Barkodu', 'Palet Adeti', 'Toplam Stok', 'Rezerve Adet', 'Depo Kalan Stok', 'Birim Adı']
+            ? ['WH Location (Adres)', 'Material Code (Stok Kodu)', 'Material Description (Stok Adı)', 'Customs Document Number (Beyanname)', 'Durum No', 'Category (Kategori)', 'Pallet Barcode (Palet Barkodu)', 'Pallet Quantity (Palet Adeti)', 'Quantity 1 (Toplam Stok)', 'Reserved Quantity (Rezerve Adet)', 'UOM 1 (Birim Adı)']
             : isRedbull
-            ? ['Address', 'Material', 'Material Name', 'SSCC', 'Lot', 'Palet', 'Alisan Statu', 'Adet', 'Birim', 'Açıklama']
+            ? ['Address', 'Material', 'Material Name', 'SSCC', 'Lot', 'Best Before Date (SKT)', 'Palet', 'Alisan Statu', 'Adet', 'Birim', 'Açıklama']
             : ['Adres', 'Kod', 'Ad', 'Parti', 'Durum', 'Palet Adet', 'Birim 1', 'Son Kırılım Miktar', 'Son Kırılım Birim', 'Barkod']
           ).map(col => (
             <div key={col} className="flex items-center gap-1.5 text-[12.5px] text-slate-600">
@@ -124,8 +124,14 @@ export default function ExcelYukle({ onNavigate }) {
             </div>
           ))}
         </div>
+        {isWms31 && (
+          <div className="flex items-start gap-1.5 text-[12px] text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-2.5 py-2 mt-3">
+            <span className="ms text-blue-500 shrink-0" style={{ fontSize: 15 }}>calculate</span>
+            <span><b>Depo Kalan Stok</b> raporda yer almaz — <b>Quantity 1 − Reserved Quantity</b> olarak otomatik hesaplanır ve sayım listesindeki sistem miktarı olarak kullanılır.</span>
+          </div>
+        )}
         <p className="text-[11.5px] text-slate-400 mt-3 pt-3 border-t border-slate-100">
-          Kod içermeyen satırlar otomatik filtrelenir. Başlık satırı ilk 6 satırda otomatik bulunur. Format (RAPOR5 / SKU Listesi / WMS_Rapor_31) sütun başlıklarına göre otomatik algılanır.
+          Kod içermeyen satırlar otomatik filtrelenir. Başlık satırı ilk 6 satırda otomatik bulunur. Format (RAPOR5 / SKU Listesi / WMS Antrepo / WMS Depo Redbull) sütun başlıklarına göre otomatik algılanır. WMS Antrepo raporunun eski Türkçe başlıklı (WMS_Rapor_31) sürümü de kabul edilir.
         </p>
       </div>
 

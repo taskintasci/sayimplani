@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import {
   collection, collectionGroup, doc, addDoc, getDoc, getDocs, updateDoc, setDoc, deleteDoc,
   onSnapshot, orderBy, query, where, serverTimestamp, writeBatch, limit,
-  arrayUnion, arrayRemove,
+  arrayUnion, arrayRemove, runTransaction,
 } from 'firebase/firestore'
 import {
   createUserWithEmailAndPassword, signOut as secondarySignOut,
@@ -16,12 +16,34 @@ import {
   uploadLokasyonlar, downloadLokasyonlar,
 } from '../firebase/rowStorage'
 import { matchesKoridorKapsam } from '../utils/adresUtils'
+import { firmaKisaKod, sayacId, sayimNoOlustur } from '../utils/sayimNo'
 
 // ─── Dev-only error logger — prod'da hassas hata detayı loglanmaz ─────────
 const devErr = (msg, err) => { if (import.meta.env.DEV) console.error(msg, err) }
 
 // ─── Debounce map: keystroke → Firestore write ────────────────────────────
 const writeTimers = new Map()
+
+// ─── Sayım işlem logu (sessions/{id}/sayimLog) ────────────────────────────
+// Sayımcının gerçekten sayıp saymadığını denetlemek için her miktar girişi
+// ayrı, salt-ekleme bir log dokümanı olarak yazılır (results dokümanı yalnız
+// SON yazanı tutuyor, geçmişi ve "Onayla mı / elle mi" ayrımını tutmuyor).
+// updateResult debounce'lu olduğu için bir satırın yazım penceresi boyunca
+// ilk görülen (önceki) miktar ve son eylem bilgisi burada bekletilir.
+const logBekleyen = new Map()   // rowId → { onceki, eylem, ekran, gorevId, zaman }
+
+const yazSayimLog = (sessionId, { zaman, ...entry }) => {
+  const { currentUser, userProfile, userRole } = useStore.getState()
+  if (!sessionId || !currentUser?.uid) return
+  addDoc(collection(db, 'sessions', sessionId, 'sayimLog'), {
+    ...entry,
+    uid:   currentUser.uid,
+    ad:    userProfile?.displayName || currentUser.email || '',
+    rol:   userRole || '',
+    istemciZamani: zaman || new Date(),   // işlemin cihazdaki anı (offline'da da doğru)
+    sunucuZamani:  serverTimestamp(),     // sunucuya ulaştığı an
+  }).catch(err => devErr('Sayım logu yazılamadı:', err))
+}
 
 // ─── Real-time unsubscribe handle'ları ────────────────────────────────────
 // results: sessions/{id}/results alt koleksiyonu (sayım miktarları)
@@ -41,6 +63,31 @@ const stopSessionListeners = () => {
 // yanlış satırın uçmasına yol açardı.
 const manualId = (prefix) =>
   `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+
+// ─── Sayım numarası (bkz. utils/sayimNo.js) ───────────────────────────────
+// Sayaç artırma + oturuma numara yazma TEK transaction'da: iki yönetici aynı
+// anda sayım açsa/eski listeyi açsa bile aynı numara iki kez verilemez.
+// `yeniData` verilirse oturum dokümanı numarasıyla birlikte OLUŞTURULUR;
+// verilmezse mevcut dokümana (henüz numarası yoksa) numara eklenir.
+const sayimNoAta = (sessionRef, { kod, tarih, yeniData = null }) =>
+  runTransaction(db, async (tx) => {
+    if (!yeniData) {
+      const sSnap = await tx.get(sessionRef)
+      if (!sSnap.exists()) return null
+      if (sSnap.data().sayimNo) return sSnap.data().sayimNo
+    }
+    const sayacRef = doc(db, 'sayimNoSayac', sayacId(kod))
+    const cSnap = await tx.get(sayacRef)
+    const sira = (cSnap.exists() ? cSnap.data().son || 0 : 0) + 1
+    const sayimNo = sayimNoOlustur(kod, tarih, sira)
+    tx.set(sayacRef, { son: sira, guncelleme: serverTimestamp() })
+    if (yeniData) tx.set(sessionRef, { ...yeniData, sayimNo })
+    else tx.update(sessionRef, { sayimNo })
+    return sayimNo
+  })
+
+let numaralamaSuruyor = null   // devam eden geriye dönük numaralama (promise)
+const tarihOf = s => s.tarih || (s.createdAt?.toDate ? s.createdAt.toDate() : new Date())
 
 // ─── Toast (sayfa altındaki kısa bildirim) zamanlayıcısı ──────────────────
 let toastTimer = null
@@ -197,9 +244,9 @@ const useStore = create((set, get) => ({
     await Promise.all([get().loadSessions(), get().loadFirmaMasterdata(firmaId)])
   },
 
-  createFirma: async ({ ad, unvan, sablon }) => {
+  createFirma: async ({ ad, unvan, kisaKod, sablon }) => {
     const { currentUser } = get()
-    const data = { ad, unvan: unvan || '', sablon, aktif: true, createdAt: serverTimestamp(), createdBy: currentUser?.uid || null }
+    const data = { ad, unvan: unvan || '', kisaKod: kisaKod || '', sablon, aktif: true, createdAt: serverTimestamp(), createdBy: currentUser?.uid || null }
     const docRef = await addDoc(collection(db, 'firmalar'), data)
     set(state => ({ firmalar: [...state.firmalar, { id: docRef.id, ...data, createdAt: new Date() }].sort((a, b) => (a.ad || '').localeCompare(b.ad || '', 'tr')) }))
     return docRef.id
@@ -207,7 +254,12 @@ const useStore = create((set, get) => ({
 
   updateFirma: async (id, patch) => {
     await updateDoc(doc(db, 'firmalar', id), patch)
-    set(state => ({ firmalar: state.firmalar.map(f => f.id === id ? { ...f, ...patch } : f) }))
+    set(state => ({
+      firmalar: state.firmalar.map(f => f.id === id ? { ...f, ...patch } : f),
+      // Aktif firmanın profili de güncellensin (kısa kod/unvan değişikliği
+      // sayfa yenilemeden yeni sayım numaralarına ve evraklara yansısın).
+      firmaProfile: state.firmaProfile?.id === id ? { ...state.firmaProfile, ...patch } : state.firmaProfile,
+    }))
   },
 
   // ── Kullanıcı yönetimi (yalnızca yönetici) ────────────────────────────────
@@ -348,6 +400,7 @@ const useStore = create((set, get) => ({
         ...g,
         sessionDurum: sessionInfo.get(g.sessionId)?.durum || null,
         sessionTarih: sessionInfo.get(g.sessionId)?.tarih || null,
+        sessionNo:    sessionInfo.get(g.sessionId)?.sayimNo || '',
       }))
       list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
       set({ gorevler: list })
@@ -375,8 +428,83 @@ const useStore = create((set, get) => ({
   },
 
   updateGorevDurum: async (sessionId, gorevId, durum) => {
-    await updateDoc(doc(db, 'sessions', sessionId, 'sayimciGorevler', gorevId), { durum })
-    set(state => ({ gorevler: state.gorevler.map(g => g.id === gorevId ? { ...g, durum } : g) }))
+    const mevcut = get().gorevler.find(g => g.id === gorevId)
+    const patch = { durum }
+    // Bitiş zaman damgası SADECE ilk tamamlanmada yazılır. Görevi 'tamamlandi'
+    // yapan iki ayrı yol var (kart modunda ilerle(), tabloda son kalem
+    // dolunca tetiklenen useEffect) ve sayımcı bir kalemi geri alıp yeniden
+    // girdiğinde de buradan geçiliyor — koşul olmasa ilk bitirme anı her
+    // seferinde ezilirdi.
+    if (durum === 'tamamlandi' && !mevcut?.tamamlanmaZamani) {
+      patch.tamamlanmaZamani = serverTimestamp()
+    }
+    await updateDoc(doc(db, 'sessions', sessionId, 'sayimciGorevler', gorevId), patch)
+    // serverTimestamp() sentinel'i ekranda formatlanamaz (toDate()'i yok);
+    // yerel kopyaya gerçek tarih konuyor, bir sonraki yüklemede sunucu
+    // değeriyle değişecek.
+    const yerel = patch.tamamlanmaZamani ? { ...patch, tamamlanmaZamani: new Date() } : patch
+    set(state => ({ gorevler: state.gorevler.map(g => g.id === gorevId ? { ...g, ...yerel } : g) }))
+  },
+
+  // Aktif oturumdaki görevlerden kalemleri TAMAMEN sayılmış olanları
+  // 'tamamlandi'ya çeker (bitiş damgası updateGorevDurum içinde yazılır).
+  // Neden burada: görev durumunu şimdiye kadar yalnızca sayımcının kendi
+  // ekranı (SayimciEkran, mode==='self') güncelliyordu; yönetici görevin
+  // kalemlerini kendi sayım ekranından doldurduğunda kart "Bekliyor"da takılı
+  // kalıyordu (2026-09-01, kullanıcı isteğiyle değişti). Sonuç yazan tek
+  // merkez store olduğu için kontrol de burada — 13 sayım sayfasına ayrı ayrı
+  // eklemek yerine updateResult/fillFromSistem sonrasında çağrılıyor.
+  syncGorevTamamlanma: () => {
+    const { gorevler, results, rows, activeSessionId, updateGorevDurum } = get()
+    if (!activeSessionId || gorevler.length === 0) return
+    const sayildi = id => { const m = results[id]?.miktar; return m !== undefined && m !== '' }
+    gorevler.forEach(g => {
+      if (g.sessionId !== activeSessionId || g.durum === 'tamamlandi') return
+      // atananRows boş = "tüm oturum" görevi (SayimciEkran'daki `atanan` memo'su
+      // da bunu böyle yorumluyor) — o zaman ölçüt oturumun tüm satırları.
+      const ids = (g.atananRows || []).length > 0 ? g.atananRows : rows.map(r => r.id)
+      if (ids.length === 0) return
+      if (ids.every(sayildi)) {
+        updateGorevDurum(g.sessionId, g.id, 'tamamlandi').catch(err => devErr('Görev tamamlandı işaretlenemedi:', err))
+      }
+    })
+  },
+
+  // Aktif oturumun sayım işlem logu (Panel → "Sayım Logu" Excel çıktısı için).
+  // Zaman sıralaması istemcide yapılır: offline yazılan kayıtlarda sunucu
+  // zamanı geç gelir, asıl ölçüt cihazdaki işlem anı (istemciZamani).
+  loadSayimLog: async () => {
+    const { activeSessionId } = get()
+    if (!activeSessionId) return []
+    // Kural henüz deploy edilmemişse okuma reddedilir → boş log gibi davran
+    // (çağıran geriye dönük rapora düşer).
+    const snap = await getDocs(collection(db, 'sessions', activeSessionId, 'sayimLog')).catch(err => {
+      devErr('Sayım logu okunamadı:', err)
+      return { docs: [] }
+    })
+    const tarih = v => (v?.toDate ? v.toDate() : v ? new Date(v) : null)
+    return snap.docs
+      .map(d => {
+        const x = d.data()
+        return { id: d.id, ...x, istemciZamani: tarih(x.istemciZamani), sunucuZamani: tarih(x.sunucuZamani) }
+      })
+      .sort((a, b) => (a.istemciZamani?.getTime() || 0) - (b.istemciZamani?.getTime() || 0))
+  },
+
+  // Geriye dönük denetim raporu için oturumun görevleri + firma kullanıcıları
+  // (ad eşlemesi). Kullanıcı listesi yalnız yöneticiye açık; okunamazsa
+  // adlar görev dokümanlarındaki sayimciAd'dan türetilir.
+  loadDenetimVerisi: async () => {
+    const { activeSessionId, activeFirma } = get()
+    if (!activeSessionId) return { gorevler: [], users: [] }
+    const [gSnap, uSnap] = await Promise.all([
+      getDocs(collection(db, 'sessions', activeSessionId, 'sayimciGorevler')),
+      getDocs(query(collection(db, 'users'), where('firma', '==', activeFirma))).catch(() => ({ docs: [] })),
+    ])
+    return {
+      gorevler: gSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      users:    uSnap.docs.map(d => ({ uid: d.id, ...d.data() })),
+    }
   },
 
   deleteGorev: async (sessionId, gorevId) => {
@@ -396,11 +524,45 @@ const useStore = create((set, get) => ({
       const q = query(collection(db, 'sessions'), where('firma', '==', activeFirma), orderBy('createdAt', 'desc'), limit(30))
       const snap = await getDocs(q)
       set({ sessions: snap.docs.map(d => ({ id: d.id, ...d.data() })) })
+      get().numarasizlariNumarala()
     } catch (err) {
       devErr('Sessions yüklenemedi:', err)
     } finally {
       set({ sessionsLoading: false })
     }
+  },
+
+  // Numara özelliğinden (2026-10-21) önce açılmış oturumlara geriye dönük
+  // numara verir. Sıra kesintisiz olduğu için ekrandaki son 30 değil,
+  // firmanın TÜM oturumları sayım tarihi (eşitse oluşturulma) sırasıyla
+  // numaralanır — en eski sayım 000001 olur. Yalnız yönetici/süper yönetici
+  // (oturumu yazabilen roller); kontrolcü/sayımcı listesi bekler.
+  numarasizlariNumarala: async () => {
+    const { userRole, firmaProfile, activeFirma, sessions } = get()
+    if (userRole !== 'yonetici' && userRole !== 'superadmin') return
+    if (!activeFirma || !sessions.some(s => !s.sayimNo)) return
+    if (numaralamaSuruyor) return numaralamaSuruyor
+    numaralamaSuruyor = (async () => {
+      const kod = firmaKisaKod(firmaProfile)
+      const tumSnap = await getDocs(query(collection(db, 'sessions'), where('firma', '==', activeFirma)))
+      const tarihMs = s => { const t = tarihOf(s); return (typeof t === 'string' ? new Date(t) : t).getTime() || 0 }
+      const bekleyen = tumSnap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(s => !s.sayimNo)
+        .sort((a, b) => tarihMs(a) - tarihMs(b) || (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0))
+      for (const s of bekleyen) {
+        const sayimNo = await sayimNoAta(doc(db, 'sessions', s.id), { kod, tarih: tarihOf(s) })
+        if (!sayimNo) continue
+        set(state => ({
+          sessions: state.sessions.map(x => x.id === s.id ? { ...x, sayimNo } : x),
+          session: state.activeSessionId === s.id && state.session ? { ...state.session, sayimNo } : state.session,
+        }))
+      }
+    })()
+      // Kural deploy edilmemiş / çevrimdışı: kalanlar bir sonraki yüklemede denenir.
+      .catch(err => devErr('Sayım numarası atanamadı:', err))
+      .finally(() => { numaralamaSuruyor = null })
+    return numaralamaSuruyor
   },
 
   // ── Excel rows (yerel bellek + Storage) ───────────────────────────────────
@@ -506,6 +668,7 @@ const useStore = create((set, get) => ({
           type:         sessionData.type || 'Yıl Sonu Sayımı',
           depoAdi:      sessionData.depoAdi || '',
           sayimBasligi: sessionData.sayimBasligi || sessionData.type || 'YIL SONU SAYIM',
+          sayimNo:      sessionData.sayimNo || '',
           tarih:        sessionData.tarih || new Date().toISOString().slice(0, 10),
           sorumlu:      '',
           durum:        sessionData.durum || 'Devam',
@@ -543,6 +706,16 @@ const useStore = create((set, get) => ({
     }
 
     set({ rowsLoading: false })
+
+    // Yönetici/süper yönetici için oturumun görevlerini de yükle: sayım
+    // ekranında kalemler dolarken syncGorevTamamlanma'nın kontrol edeceği
+    // liste böyle hazırlanıyor. Sayımcıda listeyi loadMyGorevler (tüm
+    // oturumlardaki kendi görevleri) dolduruyor — onu ezmemek için rol
+    // kontrolü şart.
+    const rol = get().userRole
+    if (rol === 'yonetici' || rol === 'superadmin') {
+      get().loadSessionGorevler(id)
+    }
 
     // Real-time results listener
     // MERGE ile güncelle: debounce bekleyen (writeTimers'daki) satırlar silinmez
@@ -603,6 +776,7 @@ const useStore = create((set, get) => ({
             session: state.session ? {
               ...state.session,
               durum: d.durum || state.session.durum,
+              sayimNo: d.sayimNo || state.session.sayimNo || '',
               // Not alanı debounce ile yazılıyor; kullanıcı yazmaya devam
               // ederken gelen snapshot yazdıklarını geri almasın diye
               // bekleyen bir yazma varsa yerel değer korunur.
@@ -635,7 +809,20 @@ const useStore = create((set, get) => ({
       createdAt:    serverTimestamp(),
     }
 
-    const docRef = await addDoc(collection(db, 'sessions'), data)
+    // Kesintisiz sıra: önce eski (numarasız) oturumlar numaralansın, yoksa
+    // yeni sayım onlardan küçük numarayı kapar.
+    await get().numarasizlariNumarala()
+
+    // Numara oturumla birlikte, tek transaction'da yazılır. Başarısız olursa
+    // (ör. bağlantı yok) numarasız oluşturulur; numarasizlariNumarala bir
+    // sonraki liste yüklemesinde tamamlar.
+    const docRef = doc(collection(db, 'sessions'))
+    try {
+      data.sayimNo = await sayimNoAta(docRef, { kod: firmaKisaKod(get().firmaProfile), tarih: data.tarih, yeniData: data })
+    } catch (err) {
+      devErr('Sayım numarası alınamadı, numarasız oluşturuluyor:', err)
+      await setDoc(docRef, data)
+    }
 
     const newSession = { id: docRef.id, ...data, createdAt: new Date() }
     set(state => ({
@@ -654,6 +841,7 @@ const useStore = create((set, get) => ({
         type:         data.type,
         depoAdi:      data.depoAdi,
         sayimBasligi: data.sayimBasligi,
+        sayimNo:      data.sayimNo || '',
         tarih:        data.tarih,
         sorumlu:      '',
       },
@@ -706,10 +894,25 @@ const useStore = create((set, get) => ({
   },
 
   // ── Tek satır güncelle (debounced Firestore write) ────────────────────────
-  updateResult: (id, partial) => {
-    set(state => ({
-      results: { ...state.results, [id]: { ...state.results[id], ...partial } },
-    }))
+  // meta (opsiyonel, sayım logu için): { eylem: 'onayla'|'duzenle'|'geriAl', ekran, gorevId }
+  // Verilmezse eylem 'elle' (tablodan miktar yazıldı) kabul edilir.
+  updateResult: (id, partial, meta) => {
+    const bekleyen = logBekleyen.get(id) || { onceki: get().results[id]?.miktar ?? '', eylem: 'elle', ekran: 'tablo', gorevId: null }
+    logBekleyen.set(id, { ...bekleyen, ...(meta || {}), zaman: new Date() })
+
+    set(state => {
+      const next = { ...state.results[id], ...partial }
+      // Miktarı olan satır "Sayıldı" sayılır. Bu damgayı şimdiye kadar yalnızca
+      // sayımcı kartındaki onayla() yazıyordu; yönetici miktarı sayım
+      // ekranından girdiğinde durum boş kalıyor, Excel'in "Onay Durumu"
+      // sütununda hiçbir şey görünmüyordu (2026-09-01 kullanıcı bildirimi:
+      // 802 satırlık çıktının 103'ünde miktar dolu ama durum boştu).
+      // 'Onaylandı' korunur — onay bir kez verildiyse geri alınmaz.
+      if (next.status !== 'Onaylandı') {
+        next.status = next.miktar !== undefined && next.miktar !== '' ? 'Sayıldı' : ''
+      }
+      return { results: { ...state.results, [id]: next } }
+    })
 
     const { activeSessionId, currentUser } = get()
     if (!activeSessionId) return
@@ -717,12 +920,32 @@ const useStore = create((set, get) => ({
     if (writeTimers.has(id)) clearTimeout(writeTimers.get(id))
     writeTimers.set(id, setTimeout(async () => {
       const result = get().results[id] || {}
+
+      // Log, setDoc'un sunucu onayını beklemeden yazılır (offline'da setDoc
+      // promise'i bağlantı gelene kadar çözülmez). Yalnız not değişikliği
+      // loglanmaz; açık eylemler (Onayla aynı miktarı yeniden yazsa bile) loglanır.
+      const lb = logBekleyen.get(id)
+      logBekleyen.delete(id)
+      const yeni = result.miktar ?? ''
+      if (lb && (String(lb.onceki) !== String(yeni) || lb.eylem !== 'elle')) {
+        const row = get().rows.find(r => r.id === id)
+        yazSayimLog(activeSessionId, {
+          eylem: lb.eylem === 'elle' && yeni === '' ? 'sil' : lb.eylem,
+          ekran: lb.ekran, gorevId: lb.gorevId || null, zaman: lb.zaman,
+          rowId: id, kod: row?.kod || '', adres: row?.adres || '',
+          sistemMiktar: row?.sayim ?? '', oncekiMiktar: lb.onceki, yeniMiktar: yeni,
+        })
+      }
+
       await setDoc(
         doc(db, 'sessions', activeSessionId, 'results', id),
         { ...result, updatedBy: currentUser?.uid || null, updatedAt: serverTimestamp() },
         { merge: true }
       )
       writeTimers.delete(id)
+      // Debounce'un içinde: her tuş vuruşunda değil, satır gerçekten
+      // yazıldıktan sonra bir kez kontrol edilsin.
+      get().syncGorevTamamlanma()
     }, 600))
   },
 
@@ -730,23 +953,37 @@ const useStore = create((set, get) => ({
   fillFromSistem: async (targetRows) => {
     const { activeSessionId, currentUser } = get()
 
+    // Sistemden doldurma da bir sayım girişi: updateResult ile aynı kuralla
+    // "Sayıldı" damgası basılır (sistem miktarı boşsa damga da basılmaz).
+    const damga = (r, mevcut) => mevcut?.status === 'Onaylandı'
+      ? 'Onaylandı'
+      : (r.sayim !== undefined && r.sayim !== '' ? 'Sayıldı' : '')
+
     set(state => {
       const next = { ...state.results }
-      targetRows.forEach(r => { next[r.id] = { ...next[r.id], miktar: r.sayim } })
+      targetRows.forEach(r => { next[r.id] = { ...next[r.id], miktar: r.sayim, status: damga(r, next[r.id]) } })
       return { results: next }
     })
 
     if (activeSessionId && targetRows.length > 0) {
       const batch = writeBatch(db)
+      const mevcutResults = get().results
       targetRows.forEach(r => {
         batch.set(
           doc(db, 'sessions', activeSessionId, 'results', r.id),
-          { miktar: r.sayim, updatedBy: currentUser?.uid || null, updatedAt: serverTimestamp() },
+          { miktar: r.sayim, status: mevcutResults[r.id]?.status || '', updatedBy: currentUser?.uid || null, updatedAt: serverTimestamp() },
           { merge: true }
         )
       })
+      // Toplu doldurma tek log kaydı; satır id'leri çok büyük listelerde
+      // doküman boyutunu şişirmesin diye sınırlı tutuluyor.
+      yazSayimLog(activeSessionId, {
+        eylem: 'sistemdenDoldur', ekran: 'tablo', adet: targetRows.length,
+        rowIds: targetRows.length <= 3000 ? targetRows.map(r => r.id) : [],
+      })
       await batch.commit()
     }
+    get().syncGorevTamamlanma()
   },
 
   // ── Toplu miktar temizle (Sistemden Doldur toggle için) ───────────────────
@@ -754,17 +991,26 @@ const useStore = create((set, get) => ({
     const { activeSessionId, currentUser } = get()
     set(state => {
       const next = { ...state.results }
-      targetRows.forEach(r => { next[r.id] = { ...next[r.id], miktar: '' } })
+      // Miktar silinen satırda "Sayıldı" damgası da kalkar; onaylanmış satırın
+      // durumu korunur (onay geri alınmaz).
+      targetRows.forEach(r => {
+        next[r.id] = { ...next[r.id], miktar: '', status: next[r.id]?.status === 'Onaylandı' ? 'Onaylandı' : '' }
+      })
       return { results: next }
     })
     if (activeSessionId && targetRows.length > 0) {
       const batch = writeBatch(db)
+      const mevcutResults = get().results
       targetRows.forEach(r => {
         batch.set(
           doc(db, 'sessions', activeSessionId, 'results', r.id),
-          { miktar: '', updatedBy: currentUser?.uid || null, updatedAt: serverTimestamp() },
+          { miktar: '', status: mevcutResults[r.id]?.status || '', updatedBy: currentUser?.uid || null, updatedAt: serverTimestamp() },
           { merge: true }
         )
+      })
+      yazSayimLog(activeSessionId, {
+        eylem: 'topluTemizle', ekran: 'tablo', adet: targetRows.length,
+        rowIds: targetRows.length <= 3000 ? targetRows.map(r => r.id) : [],
       })
       await batch.commit()
     }
@@ -892,7 +1138,10 @@ const useStore = create((set, get) => ({
     countedRows.forEach(r => {
       batch.set(
         doc(db, 'sessions', activeSessionId, 'results', r.id),
-        { ...results[r.id], status: 'Onaylandı', updatedBy: currentUser?.uid || null, updatedAt: serverTimestamp() },
+        // updatedBy/updatedAt bilerek EZİLMİYOR: satırı kimin, ne zaman saydığı
+        // geriye dönük sayım denetiminin tek izi (exportGeriyeDonukLog). Onay
+        // bilgisi ayrı alanlara yazılır.
+        { ...results[r.id], status: 'Onaylandı', onaylayan: currentUser?.uid || null, onayZamani: serverTimestamp() },
         { merge: true }
       )
     })
@@ -951,6 +1200,10 @@ const useStore = create((set, get) => ({
     set({ manualRows: [...manualRows, newRow] })
     get().showToast(`Manuel stok eklendi: ${newRow.kod}`)
     if (activeSessionId) {
+      yazSayimLog(activeSessionId, {
+        eylem: 'manuelEkle', ekran: 'manuel', liste: 'manualRows', rowId: newRow.id, kod: newRow.kod || '', adres: newRow.adres || '',
+        sistemMiktar: 0, oncekiMiktar: '', yeniMiktar: newRow.miktar ?? '',
+      })
       updateDoc(doc(db, 'sessions', activeSessionId), {
         manualRows: arrayUnion(newRow),
         updatedAt: serverTimestamp(),
@@ -985,6 +1238,10 @@ const useStore = create((set, get) => ({
     set({ korManualRows: [...korManualRows, newRow] })
     get().showToast(`Manuel stok eklendi: ${newRow.kod}`)
     if (activeSessionId) {
+      yazSayimLog(activeSessionId, {
+        eylem: 'manuelEkle', ekran: 'manuel', liste: 'korManualRows', rowId: newRow.id, kod: newRow.kod || '', adres: newRow.adres || '',
+        sistemMiktar: 0, oncekiMiktar: '', yeniMiktar: newRow.miktar ?? '',
+      })
       updateDoc(doc(db, 'sessions', activeSessionId), {
         korManualRows: arrayUnion(newRow),
         updatedAt: serverTimestamp(),
@@ -1019,6 +1276,10 @@ const useStore = create((set, get) => ({
     set({ koridorManualRows: [...koridorManualRows, newRow] })
     get().showToast(`Manuel stok eklendi: ${newRow.kod}`)
     if (activeSessionId) {
+      yazSayimLog(activeSessionId, {
+        eylem: 'manuelEkle', ekran: 'manuel', liste: 'koridorManualRows', rowId: newRow.id, kod: newRow.kod || '', adres: newRow.adres || '',
+        sistemMiktar: 0, oncekiMiktar: '', yeniMiktar: newRow.miktar ?? '',
+      })
       updateDoc(doc(db, 'sessions', activeSessionId), {
         koridorManualRows: arrayUnion(newRow),
         updatedAt: serverTimestamp(),

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import useStore from '../../store/useStore'
 import { SABLON } from '../../constants'
 import FirmaMasterdataModal from './FirmaMasterdataModal'
+import { firmaKisaKod, kisaKodGecerli } from '../../utils/sayimNo'
 
 const SABLON_OPTIONS = [
   { id: SABLON.STANDART,    label: 'LOS Sayım',                desc: 'Tüm Stok Sayımı, Kör Sayım, Hareketlilik, Membran sayfa ailesi (RAPOR5 / SKU)' },
@@ -9,7 +10,16 @@ const SABLON_OPTIONS = [
   { id: SABLON.WMS_REDBULL, label: 'WMS Depo Sayım (Redbull)', desc: 'Bina/Koridor/Sutun/Sıra/Kat adres bazlı depo sayım sayfa ailesi' },
 ]
 
-const EMPTY_FORM = { ad: '', unvan: '', sablon: SABLON.STANDART }
+const EMPTY_FORM = { ad: '', unvan: '', kisaKod: '', sablon: SABLON.STANDART }
+
+// Sayım numarasındaki firma kodu (20260911EPS000001 → EPS). Boş bırakılırsa
+// firma adının ilk 3 harfi kullanılır; başka firmanın koduyla çakışamaz.
+function kisaKodHatasi(kisaKod, ad, firmalar, haricId) {
+  const kod = firmaKisaKod({ kisaKod, ad })
+  if (kisaKod.trim() && !kisaKodGecerli(kisaKod.trim().toUpperCase())) return 'Kısa kod 2–5 harf/rakam olmalı (Türkçe karakter yok).'
+  const cakisan = firmalar.find(f => f.id !== haricId && firmaKisaKod(f) === kod)
+  return cakisan ? `"${kod}" kodu ${cakisan.ad} firmasında kullanılıyor; farklı bir kısa kod girin.` : ''
+}
 
 export default function FirmaYonetimi() {
   const { firmalar, loadFirmalar, createFirma, updateFirma } = useStore()
@@ -31,9 +41,11 @@ export default function FirmaYonetimi() {
     e.preventDefault()
     setError('')
     if (!form.ad.trim()) { setError('Firma adı gerekli.'); return }
+    const kodHata = kisaKodHatasi(form.kisaKod, form.ad, firmalar, null)
+    if (kodHata) { setError(kodHata); return }
     setSaving(true)
     try {
-      const id = await createFirma({ ad: form.ad.trim(), unvan: form.unvan.trim(), sablon: form.sablon })
+      const id = await createFirma({ ad: form.ad.trim(), unvan: form.unvan.trim(), kisaKod: form.kisaKod.trim().toUpperCase(), sablon: form.sablon })
       setForm(EMPTY_FORM)
       // Yeni firma için SKU Masterdata + Lokasyon yüklemesi zorunlu — süper
       // yönetici oluşturduktan hemen sonra bu adıma yönlendirilir.
@@ -47,7 +59,7 @@ export default function FirmaYonetimi() {
 
   function startEdit(f) {
     setEditingId(f.id)
-    setEditForm({ ad: f.ad || '', unvan: f.unvan || '', sablon: f.sablon || SABLON.STANDART })
+    setEditForm({ ad: f.ad || '', unvan: f.unvan || '', kisaKod: f.kisaKod || '', sablon: f.sablon || SABLON.STANDART })
     setEditError('')
   }
 
@@ -59,9 +71,11 @@ export default function FirmaYonetimi() {
   async function handleEditSave(id) {
     setEditError('')
     if (!editForm.ad.trim()) { setEditError('Firma adı gerekli.'); return }
+    const kodHata = kisaKodHatasi(editForm.kisaKod, editForm.ad, firmalar, id)
+    if (kodHata) { setEditError(kodHata); return }
     setEditSaving(true)
     try {
-      await updateFirma(id, { ad: editForm.ad.trim(), unvan: editForm.unvan.trim(), sablon: editForm.sablon })
+      await updateFirma(id, { ad: editForm.ad.trim(), unvan: editForm.unvan.trim(), kisaKod: editForm.kisaKod.trim().toUpperCase(), sablon: editForm.sablon })
       setEditingId(null)
     } catch (err) {
       setEditError('Kaydedilemedi: ' + (err?.message || ''))
@@ -93,6 +107,16 @@ export default function FirmaYonetimi() {
               onChange={e => setForm(f => ({ ...f, unvan: e.target.value }))}
               placeholder="Örn: YENİ FİRMA SAN. TİC. A.Ş."
               className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Kısa Kod (sayım numarasında)</label>
+            <input type="text" value={form.kisaKod} maxLength={5}
+              onChange={e => setForm(f => ({ ...f, kisaKod: e.target.value.toUpperCase() }))}
+              placeholder={firmaKisaKod({ ad: form.ad }) + ' (otomatik)'}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm mono uppercase focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+          </div>
+          <div className="flex items-end pb-2.5 text-xs text-slate-400">
+            Örnek sayım no: <span className="mono text-slate-600 ml-1">20260911{firmaKisaKod(form)}000001</span>
           </div>
           <div className="col-span-2">
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Sayım Şablonu</label>
@@ -150,6 +174,7 @@ export default function FirmaYonetimi() {
               <tr>
                 <th className="px-5 py-2.5 text-left font-semibold">Firma Adı</th>
                 <th className="px-5 py-2.5 text-left font-semibold">Unvan</th>
+                <th className="px-5 py-2.5 text-left font-semibold">Kısa Kod</th>
                 <th className="px-5 py-2.5 text-left font-semibold">Şablon</th>
                 <th className="px-5 py-2.5 text-right font-semibold">Durum</th>
                 <th className="px-5 py-2.5 text-right font-semibold">İşlem</th>
@@ -167,6 +192,12 @@ export default function FirmaYonetimi() {
                     <input type="text" value={editForm.unvan}
                       onChange={e => setEditForm(x => ({ ...x, unvan: e.target.value }))}
                       className="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
+                  </td>
+                  <td className="px-5 py-3">
+                    <input type="text" value={editForm.kisaKod} maxLength={5}
+                      onChange={e => setEditForm(x => ({ ...x, kisaKod: e.target.value.toUpperCase() }))}
+                      placeholder={firmaKisaKod({ ad: editForm.ad })}
+                      className="w-20 border border-slate-300 rounded-lg px-2 py-1.5 text-xs mono uppercase focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-200" />
                   </td>
                   <td className="px-5 py-3">
                     <select value={editForm.sablon}
@@ -191,6 +222,7 @@ export default function FirmaYonetimi() {
                 <tr key={f.id} className="hover:bg-slate-50/50">
                   <td className="px-5 py-3 font-medium text-slate-800">{f.ad}</td>
                   <td className="px-5 py-3 text-slate-500 text-xs">{f.unvan || '—'}</td>
+                  <td className="px-5 py-3 text-slate-600 text-xs mono">{firmaKisaKod(f)}{!f.kisaKod && <span className="text-slate-300 ml-1">(oto)</span>}</td>
                   <td className="px-5 py-3 text-slate-500 text-xs">{SABLON_OPTIONS.find(s => s.id === f.sablon)?.label || f.sablon}</td>
                   <td className="px-5 py-3 text-right">
                     <button

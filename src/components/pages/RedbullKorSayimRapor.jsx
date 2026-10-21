@@ -4,7 +4,7 @@ import { exportRedbullRaporFarklar } from '../../utils/excelExport'
 import ComboBox from '../shared/ComboBox'
 import RedbullDurumBadge from '../shared/RedbullDurumBadge'
 
-const EMPTY_FORM = { kod: '', ad: '', adres: '', parti: '', sscc: '', durum: '', miktar: '', birim: '', not: '' }
+const EMPTY_FORM = { kod: '', ad: '', adres: '', parti: '', skt: '', sscc: '', durum: '', miktar: '', birim: '', not: '' }
 
 export default function RedbullKorSayimRapor({ onNavigate }) {
   const { korMatched, results, session, setPendingKodFilter, korManualRows, addKorManualRow, removeKorManualRow, firmaProfile, userRole, skuMasterdata, lokasyonlar } = useStore()
@@ -58,6 +58,7 @@ export default function RedbullKorSayimRapor({ onNavigate }) {
       ad:     matchedSku.ad,
       adres:  form.adres.trim(),
       parti:  form.parti.trim(),
+      skt:    form.skt.trim(),
       sscc:   form.sscc.trim(),
       durum:  form.durum.trim(),
       miktar: form.miktar,
@@ -179,6 +180,7 @@ export default function RedbullKorSayimRapor({ onNavigate }) {
                   <th className="px-3 py-1.5">Stok Kodu / Adı</th>
                   <th className="px-3 py-1.5">SSCC</th>
                   <th className="px-3 py-1.5">Lot</th>
+                  <th className="px-3 py-1.5">SKT</th>
                   <th className="px-3 py-1.5">Statu</th>
                   <th className="px-3 py-1.5 text-right">Palet Adeti</th>
                   <th className="px-3 py-1.5">Adres</th>
@@ -197,6 +199,7 @@ export default function RedbullKorSayimRapor({ onNavigate }) {
                     </td>
                     <td className="px-3 py-1.5 mono text-slate-400 text-[10.5px]">{row.sscc || '—'}</td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.parti || '—'}</td>
+                    <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.skt || '—'}</td>
                     <td className="px-3 py-1.5"><RedbullDurumBadge durum={row.durum} /></td>
                     <td className="px-3 py-1.5 text-right mono text-slate-500 text-[12px]">{row.paletAdeti != null && row.paletAdeti !== '' ? row.paletAdeti : '—'}</td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.adres}</td>
@@ -299,6 +302,16 @@ export default function RedbullKorSayimRapor({ onNavigate }) {
                 />
               </div>
               <div>
+                <label className="block text-[11px] text-slate-500 mb-1">SKT</label>
+                <input
+                  type="text"
+                  value={form.skt}
+                  onChange={e => setForm(f => ({ ...f, skt: e.target.value }))}
+                  placeholder="31.12.2026"
+                  className="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-[12.5px] mono focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+                />
+              </div>
+              <div>
                 <label className="block text-[11px] text-slate-500 mb-1">SSCC</label>
                 <ComboBox
                   value={form.sscc}
@@ -377,6 +390,7 @@ export default function RedbullKorSayimRapor({ onNavigate }) {
                   <th className="px-3 py-1.5">Stok Kodu / Adı</th>
                   <th className="px-3 py-1.5">SSCC</th>
                   <th className="px-3 py-1.5">Lot</th>
+                  <th className="px-3 py-1.5">SKT</th>
                   <th className="px-3 py-1.5">Statu</th>
                   <th className="px-3 py-1.5">Adres</th>
                   <th className="px-3 py-1.5 text-right">Sistem</th>
@@ -395,6 +409,7 @@ export default function RedbullKorSayimRapor({ onNavigate }) {
                     </td>
                     <td className="px-3 py-1.5 mono text-slate-400 text-[10.5px]">{row.sscc || '—'}</td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.parti || '—'}</td>
+                    <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.skt || '—'}</td>
                     <td className="px-3 py-1.5 text-slate-500 text-[12px]">{row.durum || '—'}</td>
                     <td className="px-3 py-1.5 mono text-slate-500 text-[12px]">{row.adres || '—'}</td>
                     <td className="px-3 py-1.5 text-right mono text-slate-400">0</td>

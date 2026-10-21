@@ -78,6 +78,15 @@ const PrintSheet = forwardRef(function PrintSheet(
         >
           {/* ── Sayfa başlığı ── */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 4, marginBottom: 4, borderBottom: '1.5px solid #1e293b' }}>
+            {/* Sayım no — sol üst (sağdaki SAYFA bloğuyla aynı genişlik, başlık ortada kalsın) */}
+            <div style={{ textAlign: 'left', minWidth: 130 }}>
+              {session.sayimNo && (
+                <>
+                  <p style={{ fontSize: '6pt', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>SAYIM NO</p>
+                  <p style={{ fontSize: '9pt', fontWeight: 800, color: '#1e293b', fontFamily: 'ui-monospace, monospace', whiteSpace: 'nowrap', lineHeight: 1.3 }}>{session.sayimNo}</p>
+                </>
+              )}
+            </div>
             <div style={{ textAlign: 'center', flex: 1 }}>
               <p style={{ fontSize: '9pt', fontWeight: 700, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {firmaUnvani || 'SAYIM PLANI'}
@@ -92,7 +101,7 @@ const PrintSheet = forwardRef(function PrintSheet(
                 {session.depoAdi ? ` · ${session.depoAdi}` : ''}
               </p>
             </div>
-            <div style={{ textAlign: 'right', minWidth: 90 }}>
+            <div style={{ textAlign: 'right', minWidth: 130 }}>
               <p style={{ fontSize: '6pt', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>SAYFA</p>
               <p style={{ fontSize: '15pt', fontWeight: 800, color: '#1d4ed8', lineHeight: 1.1 }}>
                 {pageIdx + 1} <span style={{ fontSize: '8.5pt', color: '#94a3b8' }}>/ {totalPages}</span>
